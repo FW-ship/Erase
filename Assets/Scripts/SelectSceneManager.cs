@@ -166,4 +166,11 @@ public class SelectSceneManager : MonoBehaviour {
         PlayerPrefs.SetInt("scenarioCount", 20000);//クライマックスへ
         GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "StoryScene");
     }
+
+    public void PushConnectButton()
+    {
+        GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "MatchScene");
+    }
+
+
 }

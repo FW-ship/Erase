@@ -126,4 +126,5 @@ public class Utility : MonoBehaviour {
         yield return new WaitForSeconds(waitTime);
         Application.OpenURL(URL);
     }
+
 }

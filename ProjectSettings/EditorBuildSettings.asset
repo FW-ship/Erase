@@ -26,3 +26,6 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/GameOverScene.unity
     guid: 58536014f730c3d40b95735810316aba
+  - enabled: 1
+    path: Assets/MatchScene.unity
+    guid: 3f5ae54131c3b9d4c82796e78761fbc6
