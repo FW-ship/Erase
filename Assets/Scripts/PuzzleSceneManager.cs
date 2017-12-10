@@ -132,6 +132,7 @@ public class PuzzleSceneManager : MonoBehaviour
     /// </summary>
     public int[,,,] library = new int[2, DECKCARD_NUM, 3, 10];                 //ライブラリ（使用中のデッキ）の状態を管理する配列。１次元が「プレイヤーかエネミーか」２次元が「デッキの何番目のカード」か３次元が「カード番号(0)、必要マナ(1)、スキル種別(2)」、４次元目が「細別(マナなら色、スキル種別なら第何種か)」
 
+    private GameObject objMatch;                                                             //通信用ゲームオブジェクト
     private GameObject objBackButton;                                                        //ルームに戻るボタン
     private GameObject objEliminatBlockParent;                                               //消去演出用オブジェクトの親オブジェクト
     private GameObject objForNextTurnTime;                                                   //ターンの残り時間のオブジェクトを代入
@@ -170,6 +171,8 @@ public class PuzzleSceneManager : MonoBehaviour
     void Start()
     {
         int i, j, k, l;
+
+        if (GameObject.Find("BGMManager").GetComponent<BGMManager>().multiPlay==1) { objMatch=PhotonNetwork.Instantiate("MatchManager", new Vector3(0, 0, 0), new Quaternion(0,0,0,0), 0); }
 
         //操作ボタンについて描画用オブジェクトを変数に代入。
         objButton[0] = GameObject.Find("AButton").gameObject as GameObject;
@@ -334,6 +337,7 @@ public class PuzzleSceneManager : MonoBehaviour
         {
             GameObject.Find("BGMManager").GetComponent<BGMManager>().b1.bgmChangeFlag = true;//falseなら音楽は変えずにtrueに戻し、次回からまた変更されるようにする
         }
+
         for (i = 0; i < 2; i++)
         {
             LibraryMake(i);//ライブラリ作成
@@ -2029,6 +2033,7 @@ public class PuzzleSceneManager : MonoBehaviour
         }
         libraryNum[player] = DECKCARD_NUM;
         Shuffle(player);
+        if (GameObject.Find("BGMManager").GetComponent<BGMManager>().multiPlay != 0 && player==0) {objMatch.GetComponent<Match>().library = library;objMatch.GetComponent<Match>().test = 138; }
     }
 
     //呪文詠唱時演出

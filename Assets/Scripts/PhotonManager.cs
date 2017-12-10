@@ -107,24 +107,37 @@ public class PhotonManager : MonoBehaviour {
         PhotonNetwork.LeaveRoom();
     }
 
+    //名前変更
     public void ChangeName()
     {
         PlayerPrefs.SetString("userName", GameObject.Find("TextInput").GetComponent<Text>().text);
         GameObject.Find("Name").GetComponent<Text>().text = "Name:";
     }
 
-    //部屋に入ると※未実装
+    //部屋に入ると
     void OnJoinedRoom()
     {
-        Debug.Log("PhotonManager OnJoinedRoom");
+        //部屋に先住者がいるならば
+        if (PhotonNetwork.otherPlayers.Length>0)
+        {
+            GameObject.Find("BGMManager").GetComponent<BGMManager>().multiPlay = 2;
+            GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "PuzzleScene");
+        }   
+    }
+
+    //部屋に新しく人が入ったならば
+    void OnPhotonPlayerConnected(PhotonPlayer player)
+    {
+        GameObject.Find("BGMManager").GetComponent<BGMManager>().multiPlay = 1;
+        GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "PuzzleScene");
     }
 
     //オフラインゲームに戻る
     public void PushExitButton()
     {
         PhotonNetwork.Disconnect();
+        GameObject.Find("BGMManager").GetComponent<BGMManager>().multiPlay = 0;
         GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "SelectScene");
     }
 
 }
-//通信対戦部分の実装。

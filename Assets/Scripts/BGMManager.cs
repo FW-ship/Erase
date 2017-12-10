@@ -4,6 +4,8 @@ public class BGMManager : MonoBehaviour {
 
     //BGM再生に伴うフラグを管理するスクリプト（BGMManager本体がdontdestroyオブジェクトなのでシーンをまたぐ際に使うフラグがある）
     public bgmFlag b1;
+    //マルチプレイのフラグ
+    public int multiPlay = 0;
 
     public struct bgmFlag
     {
@@ -11,8 +13,6 @@ public class BGMManager : MonoBehaviour {
         public int bgmNum;//新しいシーンでも流れ続ける場合のBGMの番号（scenario.csのbgmリスト番号）※スキップの場合には新たに流す必要があるため
         public bgmFlag(bool flag, int num) { this.bgmChangeFlag = flag; this.bgmNum = num; }
     }
-
-
 
     // Use this for initialization
     void Start () {
