@@ -56,7 +56,7 @@ MonoBehaviour:
   group: 0
   OwnerShipWasTransfered: 0
   prefixBackup: -1
-  synchronization: 3
+  synchronization: 0
   onSerializeTransformOption: 3
   onSerializeRigidBodyOption: 2
   ownershipTransfer: 0
@@ -78,3 +78,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 94f75f006700304488540f23fe8259d5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  library: 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000

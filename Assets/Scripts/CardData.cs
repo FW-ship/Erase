@@ -714,7 +714,7 @@ public class CardData : MonoBehaviour {
     public void Card29Skill2(int usePlayer)
     {
         PuzzleSceneManager p1 = GetComponent<PuzzleSceneManager>();
-        p1.LibraryMake(usePlayer);//ライブラリの再構築
+        StartCoroutine(p1.LibraryMake(usePlayer));//ライブラリの再構築
     }
 
     public void Card33Skill2(int usePlayer)

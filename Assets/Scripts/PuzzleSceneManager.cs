@@ -113,6 +113,7 @@ public class PuzzleSceneManager : MonoBehaviour
 
     public int chainCount;                                                     //連鎖数
     public int nextTurnTime;                                                   //次のターンまでの残り時間
+    public bool waitFlag;                                                      //通信待機中か否かのフラグ
     public bool[] phaseSkipFlag = new bool[5];                                 //フェイズを飛ばすかどうかのフラグ
     public bool[,] useCard = new bool[2, HAND_NUM];                            //手札のカードが使われたか否か。trueなら使用されたということでターン終了時に新たなカードに変える（カードを引く）。
     public int[] handFollower = new int[2];                                    //場に出ているシュジンコウ。０がプレイヤーで１がエネミー
@@ -170,10 +171,39 @@ public class PuzzleSceneManager : MonoBehaviour
     // Use this for initialization
     void Start()
     {
+        StartCoroutine(MainGame());
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+
+    }
+
+    //ゲーム本体
+    private IEnumerator MainGame()
+    {
+        yield return StartCoroutine(StartSetting());
+        while (true)
+        {
+            //フレームごとに①入力処理とその反応(KeyInput)→②時間経過による動きとその反応(TimeFunc)→③描画(ScreenDraw)の流れを行う。
+            if (winloseFlag == false && stopFlag == false)//勝ち負け決定したら動かさない。一時停止中は動かさない。
+            {
+                KeyInput();
+                TimeFunc();
+                ScreenDraw();
+            }
+            yield return null;
+        }
+    }
+
+
+    //開始処理のコルーチン
+    private IEnumerator StartSetting()
+    {
         int i, j, k, l;
 
-        if (GameObject.Find("BGMManager").GetComponent<BGMManager>().multiPlay==1) { objMatch=PhotonNetwork.Instantiate("MatchManager", new Vector3(0, 0, 0), new Quaternion(0,0,0,0), 0); }
-
+        if (GameObject.Find("BGMManager").GetComponent<BGMManager>().multiPlay != 0) { objMatch = PhotonNetwork.Instantiate("MatchManager", new Vector3(0, 0, 0), new Quaternion(0, 0, 0, 0), 0); }
         //操作ボタンについて描画用オブジェクトを変数に代入。
         objButton[0] = GameObject.Find("AButton").gameObject as GameObject;
         objButton[1] = GameObject.Find("BButton").gameObject as GameObject;
@@ -251,7 +281,7 @@ public class PuzzleSceneManager : MonoBehaviour
         }
 
         //一時停止ボタン・ルームに戻るボタンのオブジェクト
-        objStopButton= GameObject.Find("StopButton").gameObject as GameObject;
+        objStopButton = GameObject.Find("StopButton").gameObject as GameObject;
         objBackButton = GameObject.Find("BackButton").gameObject as GameObject;
         objBackButton.gameObject.SetActive(false);      //戻るボタンは一時停止中しか出てこない。
 
@@ -299,7 +329,7 @@ public class PuzzleSceneManager : MonoBehaviour
         blockImage[15] = Resources.Load<Sprite>("blockyellowfloat");
 
         //一時停止ボタンの画像読み込み
-        stopImage[0]= Resources.Load<Sprite>("stopbutton");
+        stopImage[0] = Resources.Load<Sprite>("stopbutton");
         stopImage[1] = Resources.Load<Sprite>("startbutton");
 
         //効果音読み込み
@@ -307,7 +337,7 @@ public class PuzzleSceneManager : MonoBehaviour
         {
             seAudioSource.Add(gameObject.AddComponent<AudioSource>());
         }
-        for (i=0;i<seAudioSource.Count;i++)//リストの要素数の回数for文を回し、各要素にボリューム設定する。
+        for (i = 0; i < seAudioSource.Count; i++)//リストの要素数の回数for文を回し、各要素にボリューム設定する。
         {
             seAudioSource[i].volume = PlayerPrefs.GetFloat("SEVolume", 0.8f);
         }
@@ -338,9 +368,10 @@ public class PuzzleSceneManager : MonoBehaviour
             GameObject.Find("BGMManager").GetComponent<BGMManager>().b1.bgmChangeFlag = true;//falseなら音楽は変えずにtrueに戻し、次回からまた変更されるようにする
         }
 
+
         for (i = 0; i < 2; i++)
         {
-            LibraryMake(i);//ライブラリ作成
+            yield return StartCoroutine(LibraryMake(i));//ライブラリ作成
         }
 
         //カード画像読み込み
@@ -373,20 +404,6 @@ public class PuzzleSceneManager : MonoBehaviour
         //ゲームの初期化
         InitGame();
     }
-
-    // Update is called once per frame
-    void Update()
-    {
-        //フレームごとに①入力処理とその反応(KeyInput)→②時間経過による動きとその反応(TimeFunc)→③描画(ScreenDraw)の流れを行う。
-        if (winloseFlag == false && stopFlag==false)//勝ち負け決定したら動かさない。一時停止中は動かさない。
-        {
-            KeyInput();
-            TimeFunc();
-            ScreenDraw();
-        }
-    }
-
-
 
     //パズル部の変数の初期化
     private void PuzzleVariableSetting()
@@ -441,6 +458,7 @@ public class PuzzleSceneManager : MonoBehaviour
         for (i = 1; i < BLOCKTYPE_NUM + 1; i++)
         {
             enemyGetManaPace[i] = GetComponent<CardData>().enemyGetManaPace[i];
+            if (GameObject.Find("BGMManager").GetComponent<BGMManager>().multiPlay != 0) { enemyGetManaPace[i]=99999999; }//対人戦では獲得ペースを最大にして実質獲得しないようにする
         }
     }
 
@@ -1505,7 +1523,7 @@ public class PuzzleSceneManager : MonoBehaviour
                 l = 0;
                 for (k = 1; k < BLOCKTYPE_NUM + 1; k++)
                 {
-                    if (cardCost[i, j, k] > cardMana[i, j, k] && useCard[i,j]==false)//魔力が足りず、使用確定カードでもないなら残り必要マナを表示する
+                    if (cardCost[i, j, k] > cardMana[i, j, k] && useCard[i, j] == false)//魔力が足りず、使用確定カードでもないなら残り必要マナを表示する
                     {
                         objCardMana[i, j, k].gameObject.SetActive(true);
                         objCardMana[i, j, k].GetComponent<RectTransform>().sizeDelta = new Vector2(CARD_WIDTH * (cardCost[i, j, k] - cardMana[i, j, k]) / cardCost[i, j, k], 20);
@@ -1711,7 +1729,7 @@ public class PuzzleSceneManager : MonoBehaviour
                 }
             }
         }
-            phaseCount = "特殊呪文フェイズ";
+        phaseCount = "特殊呪文フェイズ";
         //第２種呪文フェイズ
         //２種呪文妨害（２種呪文を妨害する２種呪文(COUNTER)は相互作用を発生させるので、COUNTER同士では影響を与えない効果に＋他呪文と隔離。この種別だけはフェイズスキップも無視する）
         for (l = 0; l < 2; l++)
@@ -1749,7 +1767,7 @@ public class PuzzleSceneManager : MonoBehaviour
             {
                 for (i = 0; i < HAND_NUM; i++)
                 {
-                    if (useCard[l, i] == true && cardSkill[l, i, 2] ==OTHER)                    //使用確定カードで２種召喚や２種妨害でないなら発動。
+                    if (useCard[l, i] == true && cardSkill[l, i, 2] == OTHER)                    //使用確定カードで２種召喚や２種妨害でないなら発動。
                     {
                         objCard[l, i].GetComponent<Image>().enabled = false;//使用したら非表示
                         seAudioSource[11].PlayOneShot(se[11]);
@@ -1877,7 +1895,7 @@ public class PuzzleSceneManager : MonoBehaviour
 
         for (i = 0; i < HAND_NUM; i++)
         {
-            if (useCard[player,i]==true && cardSkill[player, i, spellType] == SUMMON)//使用確定カードで、呼び出されている種別の召喚呪文（SUMMON）なら発動。
+            if (useCard[player, i] == true && cardSkill[player, i, spellType] == SUMMON)//使用確定カードで、呼び出されている種別の召喚呪文（SUMMON）なら発動。
             {
                 objCard[player, i].GetComponent<Image>().enabled = false;//使用したカードは非表示に
                 m++;
@@ -1958,10 +1976,10 @@ public class PuzzleSceneManager : MonoBehaviour
     public IEnumerator LifeDamage(int player)
     {
         //playerの炎上演出をオンに
-        objLifeDamage[player].GetComponent<Image>().enabled = true; objLifeDamage[player].GetComponent<Animator>().enabled = true; 
+        objLifeDamage[player].GetComponent<Image>().enabled = true; objLifeDamage[player].GetComponent<Animator>().enabled = true;
         for (int i = 0; i < 30; i++) { yield return null; }//演出フレームが終わるまで待つ。
         //演出をオフに戻す
-        objLifeDamage[player].GetComponent<Image>().enabled = false; objLifeDamage[player].GetComponent<Animator>().enabled = false; 
+        objLifeDamage[player].GetComponent<Image>().enabled = false; objLifeDamage[player].GetComponent<Animator>().enabled = false;
     }
 
     //シュジンコウ破壊チェック。シュジンコウの受けたダメージがDFを越えていたら破壊される。
@@ -1988,7 +2006,7 @@ public class PuzzleSceneManager : MonoBehaviour
             {
                 for (i = 0; i < 3; i++)
                 {
-                 followerStatus[l, i] = 0;
+                    followerStatus[l, i] = 0;
                 }
             }
         }
@@ -2008,7 +2026,7 @@ public class PuzzleSceneManager : MonoBehaviour
     }
 
     //デッキをライブラリ（ゲームで使用するカード配列）に落とし込み、ライブラリをシャッフルする。（ライブラリの初期化）
-    public void LibraryMake(int player)
+    public IEnumerator LibraryMake(int player)
     {
         int i, j;
         CardData c1 = GetComponent<CardData>();
@@ -2021,7 +2039,14 @@ public class PuzzleSceneManager : MonoBehaviour
         //デッキをライブラリに代入
         for (i = 0; i < DECKCARD_NUM; i++)
         {
-            library[player, i, 0, 0] = c1.deckCard[player,i];//カードの種類
+            if (player == 1 && GameObject.Find("BGMManager").GetComponent<BGMManager>().multiPlay != 0)
+            {
+                yield return StartCoroutine(WaitMatchData(600));//データ同期待ち
+            }
+            else
+            {
+                library[player, i, 0, 0] = c1.deckCard[player, i];//カードの種類
+            }
             for (j = 1; j < BLOCKTYPE_NUM + 1; j++)
             {
                 library[player, i, 1, j] = c1.cardCost[library[player, i, 0, 0], j];
@@ -2033,7 +2058,6 @@ public class PuzzleSceneManager : MonoBehaviour
         }
         libraryNum[player] = DECKCARD_NUM;
         Shuffle(player);
-        if (GameObject.Find("BGMManager").GetComponent<BGMManager>().multiPlay != 0 && player==0) {objMatch.GetComponent<Match>().library = library;objMatch.GetComponent<Match>().test = 138; }
     }
 
     //呪文詠唱時演出
@@ -2198,19 +2222,19 @@ public class PuzzleSceneManager : MonoBehaviour
     }
 
     //ブロックの消去演出
-    public IEnumerator EliminatBlockEffect(int x,int y,int color)
+    public IEnumerator EliminatBlockEffect(int x, int y, int color)
     {
         int i;
         //消えたブロックが何点のマナになったかテキスト表示(この時点ではchainCount増加はまだなので+1しておく)
-        if (color == 1) { objEliminatBlock[x, y].GetComponent<Text>().text = "<color=red>" + (chainCount+1).ToString() + "</color>"; }//color==1(赤)
-        if (color == 2) { objEliminatBlock[x, y].GetComponent<Text>().text = "<color=blue>" + (chainCount+1).ToString() + "</color>"; }//color==2(青)
-        if (color == 3) { objEliminatBlock[x, y].GetComponent<Text>().text = "<color=green>" + (chainCount+1).ToString() + "</color>"; }//color==3(緑)
-        if (color == 4) { objEliminatBlock[x, y].GetComponent<Text>().text = "<color=black>" + (chainCount+1).ToString() + "</color>"; }//color==4(黒)
-        if (color == 5) { objEliminatBlock[x, y].GetComponent<Text>().text = "<color=yellow>" + (chainCount+1).ToString() + "</color>"; }//color==5(黄)
+        if (color == 1) { objEliminatBlock[x, y].GetComponent<Text>().text = "<color=red>" + (chainCount + 1).ToString() + "</color>"; }//color==1(赤)
+        if (color == 2) { objEliminatBlock[x, y].GetComponent<Text>().text = "<color=blue>" + (chainCount + 1).ToString() + "</color>"; }//color==2(青)
+        if (color == 3) { objEliminatBlock[x, y].GetComponent<Text>().text = "<color=green>" + (chainCount + 1).ToString() + "</color>"; }//color==3(緑)
+        if (color == 4) { objEliminatBlock[x, y].GetComponent<Text>().text = "<color=black>" + (chainCount + 1).ToString() + "</color>"; }//color==4(黒)
+        if (color == 5) { objEliminatBlock[x, y].GetComponent<Text>().text = "<color=yellow>" + (chainCount + 1).ToString() + "</color>"; }//color==5(黄)
 
-        for (i=0;i<30;i++)
+        for (i = 0; i < 30; i++)
         {//消去演出オブジェクトをプレイヤー表示へと集める
-            objEliminatBlock[x,y].GetComponent<RectTransform>().localPosition = new Vector3(((x * BLOCK_SIZE + FIELD_LEFT)*(30-i) + MANA_POSITION_X*i)/30, ((FIELD_TOP - y * BLOCK_SIZE)*(30-i) + MANA_POSITION_Y*i)/30, 0);//プレイヤー表示(MANA_POSITION)にぶつかる
+            objEliminatBlock[x, y].GetComponent<RectTransform>().localPosition = new Vector3(((x * BLOCK_SIZE + FIELD_LEFT) * (30 - i) + MANA_POSITION_X * i) / 30, ((FIELD_TOP - y * BLOCK_SIZE) * (30 - i) + MANA_POSITION_Y * i) / 30, 0);//プレイヤー表示(MANA_POSITION)にぶつかる
             yield return null;
         }
 
@@ -2222,7 +2246,7 @@ public class PuzzleSceneManager : MonoBehaviour
     public IEnumerator SpellMiss(int player)
     {
         int i;
-        for (i = 0; i < SPELL_TIME-30; i++)//カットイン消滅残り30Fまで（SPELL_TIME-30）は動かない。
+        for (i = 0; i < SPELL_TIME - 30; i++)//カットイン消滅残り30Fまで（SPELL_TIME-30）は動かない。
         {
             yield return null;
         }
@@ -2240,29 +2264,29 @@ public class PuzzleSceneManager : MonoBehaviour
         {
             if (player == 0)
             {
-                objTarai[0].GetComponent<RectTransform>().localPosition = new Vector3(PLAYER_TARAI_POSITION_X - i*2, PLAYER_TARAI_POSITION_Y - 200 + 3*i,0);
+                objTarai[0].GetComponent<RectTransform>().localPosition = new Vector3(PLAYER_TARAI_POSITION_X - i * 2, PLAYER_TARAI_POSITION_Y - 200 + 3 * i, 0);
                 objTarai[0].GetComponent<RectTransform>().transform.Rotate(new Vector3(0, 0, 2));
-                objCutIn[0].GetComponent<RectTransform>().localPosition = new Vector3(PLAYER_SPELL_POSITION_X, PLAYER_SPELL_POSITION_Y - i*5, 0);
+                objCutIn[0].GetComponent<RectTransform>().localPosition = new Vector3(PLAYER_SPELL_POSITION_X, PLAYER_SPELL_POSITION_Y - i * 5, 0);
                 objCutIn[0].GetComponent<RectTransform>().transform.Rotate(new Vector3(0, 0, -1));
             }
             if (player == 1)
             {
-                objTarai[1].GetComponent<RectTransform>().localPosition = new Vector3(ENEMY_TARAI_POSITION_X + i*2, ENEMY_TARAI_POSITION_Y - 200 + 3*i, 0);
+                objTarai[1].GetComponent<RectTransform>().localPosition = new Vector3(ENEMY_TARAI_POSITION_X + i * 2, ENEMY_TARAI_POSITION_Y - 200 + 3 * i, 0);
                 objTarai[1].GetComponent<RectTransform>().transform.Rotate(new Vector3(0, 0, -2));
-                objCutIn[1].GetComponent<RectTransform>().localPosition = new Vector3(ENEMY_SPELL_POSITION_X, ENEMY_SPELL_POSITION_Y - i*5, 0);
+                objCutIn[1].GetComponent<RectTransform>().localPosition = new Vector3(ENEMY_SPELL_POSITION_X, ENEMY_SPELL_POSITION_Y - i * 5, 0);
                 objCutIn[1].GetComponent<RectTransform>().transform.Rotate(new Vector3(0, 0, 1));
             }
             yield return null;
         }
         if (player == 0)
         {
-            objTarai[0].GetComponent<RectTransform>().transform.Rotate(new Vector3(0, 0, -2*20));
-            objCutIn[0].GetComponent<RectTransform>().transform.Rotate(new Vector3(0, 0, 1*20));
+            objTarai[0].GetComponent<RectTransform>().transform.Rotate(new Vector3(0, 0, -2 * 20));
+            objCutIn[0].GetComponent<RectTransform>().transform.Rotate(new Vector3(0, 0, 1 * 20));
         }
         if (player == 1)
         {
-            objTarai[1].GetComponent<RectTransform>().transform.Rotate(new Vector3(0, 0, 2*20));
-            objCutIn[1].GetComponent<RectTransform>().transform.Rotate(new Vector3(0, 0, -1*20));
+            objTarai[1].GetComponent<RectTransform>().transform.Rotate(new Vector3(0, 0, 2 * 20));
+            objCutIn[1].GetComponent<RectTransform>().transform.Rotate(new Vector3(0, 0, -1 * 20));
         }
         objCutIn[player].GetComponent<Image>().enabled = false;
         objTarai[player].GetComponent<Image>().enabled = false;
@@ -2287,20 +2311,38 @@ public class PuzzleSceneManager : MonoBehaviour
             if (player == 1) { objLibrary[1].GetComponent<RectTransform>().localPosition = new Vector3(ENEMY_LIBRARY_X + 3 * (Mathf.Cos((float)timeCount / 1)), LIBRARY_Y); }
             yield return null;
         }
-        if (player == 0) { objLibrary[0].GetComponent<RectTransform>().localPosition = new Vector3(PLAYER_LIBRARY_X , LIBRARY_Y); }
-        if (player == 1) { objLibrary[1].GetComponent<RectTransform>().localPosition = new Vector3(ENEMY_LIBRARY_X , LIBRARY_Y); }
+        if (player == 0) { objLibrary[0].GetComponent<RectTransform>().localPosition = new Vector3(PLAYER_LIBRARY_X, LIBRARY_Y); }
+        if (player == 1) { objLibrary[1].GetComponent<RectTransform>().localPosition = new Vector3(ENEMY_LIBRARY_X, LIBRARY_Y); }
     }
 
-    public IEnumerator ShakeCard(int player,int hand)
+    public IEnumerator ShakeCard(int player, int hand)
     {
         for (int i = 0; i < 30; i++)
         {
-            if (player == 0) { objCard[player,hand].GetComponent<RectTransform>().localPosition = new Vector3(PLAYER_CARD_X + (CARD_WIDTH+30)*hand + 3 * (Mathf.Cos((float)timeCount / 1)), CARD_Y); }
-            if (player == 1) { objCard[player,hand].GetComponent<RectTransform>().localPosition = new Vector3(ENEMY_CARD_X + (CARD_WIDTH + 30) * hand + 3 * (Mathf.Cos((float)timeCount / 1)), CARD_Y); }
+            if (player == 0) { objCard[player, hand].GetComponent<RectTransform>().localPosition = new Vector3(PLAYER_CARD_X + (CARD_WIDTH + 30) * hand + 3 * (Mathf.Cos((float)timeCount / 1)), CARD_Y); }
+            if (player == 1) { objCard[player, hand].GetComponent<RectTransform>().localPosition = new Vector3(ENEMY_CARD_X + (CARD_WIDTH + 30) * hand + 3 * (Mathf.Cos((float)timeCount / 1)), CARD_Y); }
             yield return null;
         }
-        if (player == 0) { objCard[player,hand].GetComponent<RectTransform>().localPosition = new Vector3(PLAYER_CARD_X + (CARD_WIDTH+30)*hand, CARD_Y); }
-        if (player == 1) { objCard[player,hand].GetComponent<RectTransform>().localPosition = new Vector3(ENEMY_CARD_X + (CARD_WIDTH + 30) * hand, CARD_Y); }
+        if (player == 0) { objCard[player, hand].GetComponent<RectTransform>().localPosition = new Vector3(PLAYER_CARD_X + (CARD_WIDTH + 30) * hand, CARD_Y); }
+        if (player == 1) { objCard[player, hand].GetComponent<RectTransform>().localPosition = new Vector3(ENEMY_CARD_X + (CARD_WIDTH + 30) * hand, CARD_Y); }
+    }
+
+    //通信対戦用同期待ちコルーチン
+    private IEnumerator WaitMatchData(int flame)
+    {
+        if (GameObject.Find("BGMManager").GetComponent<BGMManager>().multiPlay != 0)
+        {
+            Match m1 = objMatch.GetComponent<Match>();
+            waitFlag = true;
+            for (int i = 0; i < flame; i++)
+            {
+                m1.DataChange();
+                if (waitFlag == false) { yield break; }
+                yield return null;
+            }
+            //待ってもレスポンスがなければ敗北扱いで終了。
+            Lose();
+        }
     }
 
     //一時停止ボタンの挙動
