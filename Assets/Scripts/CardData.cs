@@ -12,6 +12,8 @@ public class CardData : MonoBehaviour {
     //呪文のスキル種別に関する定数
     const int SUMMON = 1;                        //第０種、第２種呪文においてスキル種別（召喚）を表す。
     const int COUNTER = 2;                       //第２種呪文においてスキル種別（２種呪文妨害）を表す。
+    const int DECK_EAT = 3;                      //第２種呪文においてスキル種別（デッキ破壊）を表す。
+    const int HAND_CHANGE = 4;                   //第２種呪文においてスキル種別（手札交換）を表す。
     const int OWN = 1;                           //第１種呪文においてスキル種別（対象：自身のシュジンコウ）を表す。
     const int YOURS = 2;                         //第１種呪文においてスキル種別（対象：自身のシュジンコウ）を表す。
     const int OTHER = 10000;                     //第２種呪文においてスキル種別（その他）を表す。
@@ -563,14 +565,14 @@ public class CardData : MonoBehaviour {
         cardName[i] = "排撃";
         cardExplain[i] = "<color=blue>排撃</color>\nコスト：黒40　　　　<b><color=#ff5000ff>Ｒ</color></b>\n対戦相手は使用状態にない呪文を全て捨てる。この呪文は特殊呪文として扱う。\n\n<i>準備がおろそかなら、武器はがらくたと変わらない。</i>";
         cardCost[i, 4] = 40;
-        cardSkill[i, 2] = OTHER;
+        cardSkill[i, 2] = HAND_CHANGE;
         cardSkill2Use[i] = new CardSkill2Delegate(Card51Skill2);
 
         i = 52;
         cardName[i] = "焚書";
         cardExplain[i] = "<color=blue>焚書</color>\nコスト：黒30　　　　<b><color=#ff5000ff>Ｒ</color></b>\n対戦相手のライブラリを上から３枚捨てる。この呪文は特殊呪文として扱う。\n\n<i>物語が燃えてゆく。</i>";
         cardCost[i, 4] = 30;
-        cardSkill[i, 2] = OTHER;
+        cardSkill[i, 2] = DECK_EAT;
         cardSkill2Use[i] = new CardSkill2Delegate(Card52Skill2);
 
         i = 53;
@@ -593,7 +595,7 @@ public class CardData : MonoBehaviour {
         cardCost[i, 2] = 10;
         cardCost[i, 4] = 20;
         cardCost[i, 5] = 10;
-        cardSkill[i, 2] = OTHER;
+        cardSkill[i, 2] = HAND_CHANGE;
         cardSkill2Use[i] = new CardSkill2Delegate(Card54Skill2);
 
         i = 55;
@@ -635,23 +637,22 @@ public class CardData : MonoBehaviour {
         cardName[i] = "墨塗り";
         cardExplain[i] = "<color=blue>墨塗り</color>\nコスト：黒10　　　　<b><color=black>Ｃ</color></b>\n対戦相手のライブラリを上から１枚捨てる。この呪文は特殊呪文として扱う。\n\n<i>黒塗りされたページ。</i>";
         cardCost[i, 4] = 30;
-        cardSkill[i, 2] = OTHER;
+        cardSkill[i, 2] = DECK_EAT;
         cardSkill2Use[i] = new CardSkill2Delegate(Card59Skill2);
 
         i = 60;
         cardName[i] = "燕";
-        cardExplain[i] = "<color=green>燕</color>\nコスト：青10緑5　　　　<b><color=black>Ｃ</color></b>\nAT1/DF2\nこのシュジンコウが登場する際、特殊呪文として自身のライブラリを3枚捨てる。\n\n<i>彼は何のために生きたんだろう。</i>";
-        cardCost[i, 2] = 10;
-        cardCost[i, 3] = 5;
+        cardExplain[i] = "<color=green>燕</color>\nコスト：緑4　　　　<b><color=black>Ｃ</color></b>\nAT1/DF2\nこのシュジンコウが登場する際、特殊呪文として自身のライブラリを3枚捨てる。\n\n<i>彼は何のために生きたんだろう。</i>";
+        cardCost[i, 3] = 4;
         cardSkill[i, 0] = SUMMON;
-        cardSkill[i, 2] = OTHER;
+        cardSkill[i, 2] = DECK_EAT;
         followerStatus[i, 0] = 1;
         followerStatus[i, 1] = 2;
         cardSkill2Use[i] = new CardSkill2Delegate(Card60Skill2);
 
         i = 61;
         cardName[i] = "里子";
-        cardExplain[i] = "<color=blue>里子</color>\nコスト：青10黒10　　　　<b><color=#ff5000ff>Ｒ</color></b>\n対戦相手にシュジンコウがいないならば、あなたのシュジンコウを対戦相手に渡す。この呪文は特殊呪文として扱う。\n\n<i>育てられなかった子供。</i>";
+        cardExplain[i] = "<color=blue>里子</color>\nコスト：青10黒10　　　　<b><color=#ff5000ff>Ｒ</color></b>\n互いのシュジンコウを交換する。（片方でもシュジンコウがいなければ失敗する）。この呪文は特殊呪文として扱う。\n\n<i>育てられなかった子供。</i>";
         cardCost[i, 2] = 10;
         cardCost[i, 4] = 10;
         cardSkill[i, 2] = OTHER;

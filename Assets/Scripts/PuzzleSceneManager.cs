@@ -64,6 +64,8 @@ public class PuzzleSceneManager : MonoBehaviour
     const int LIBRARY_Y = 320;                   //ライブラリのY位置
     const int SUMMON = 1;                        //第０種呪文と第２種呪文においてスキル種別（召喚）を表す。
     const int COUNTER = 2;                       //第２種呪文においてスキル種別（カウンター）を表す。
+    const int DECK_EAT = 3;                      //第２種呪文においてスキル種別（デッキ破壊）を表す。
+    const int HAND_CHANGE = 4;                   //第２種呪文においてスキル種別（手札交換）を表す。            
     const int OTHER = 10000;                     //第２種呪文において、スキル種別（その他）を表す。
     const int OWN = 1;                           //第１種呪文においてスキル種別（対象：自身のシュジンコウ）を現す。
     const int YOURS = 2;                         //第１種呪文においてスキル種別（対象：相手のシュジンコウ）を現す。
@@ -75,8 +77,6 @@ public class PuzzleSceneManager : MonoBehaviour
     const int INPUT_DOWN = 4;                    //下ボタンの入力
     const int INPUT_RIGHT = 8;                   //右ボタンの入力
     const int INPUT_LEFT = 16;                   //左ボタンの入力
-
-
 
     //変数の宣言
     private int activeType;                 //アクティブブロックの回転配置。0はactiveBlock[1]が上にある場合。1は右にある場合、2は下にある場合、3は左にある場合。
@@ -403,6 +403,7 @@ public class PuzzleSceneManager : MonoBehaviour
 
         //ゲームの初期化
         InitGame();
+        GameObject.Find("NowLoading").GetComponent<Image>().enabled=false;
     }
 
     //パズル部の変数の初期化
@@ -1647,136 +1648,166 @@ public class PuzzleSceneManager : MonoBehaviour
     public void DrawCard(int player, int hand)
     {
         int i, k;
-        for (i = 0; i < DECKCARD_NUM; i++)
+        if (GameObject.Find("BGMManager").GetComponent<BGMManager>().multiPlay == 0 || player == 0)
         {
-            if (library[player, i, 0, 0] != 0)
-            {//ライブラリの上から順にカードがある（０でない）ところまで探していく。
-                handCard[player, hand] = library[player, i, 0, 0];//カードの種類を代入
-                for (k = 1; k < BLOCKTYPE_NUM + 1; k++)
-                {
-                    cardCost[player, hand, k] = library[player, i, 1, k];//カードのコストを代入
+            for (i = 0; i < DECKCARD_NUM; i++)
+            {
+                if (library[player, i, 0, 0] != 0)
+                {//ライブラリの上から順にカードがある（０でない）ところまで探していく。
+                    handCard[player, hand] = library[player, i, 0, 0];//カードの種類を代入
+                    for (k = 1; k < BLOCKTYPE_NUM + 1; k++)
+                    {
+                        cardCost[player, hand, k] = library[player, i, 1, k];//カードのコストを代入
+                    }
+                    for (k = 0; k < SKILL_TYPE; k++)
+                    {
+                        cardSkill[player, hand, k] = library[player, i, 2, k];//カードの効果を代入
+                    }
+                    library[player, i, 0, 0] = 0;//カードを引いたのでライブラリから消す。
+                    libraryNum[player]--;//ライブラリの残り枚数を1減らす。
+                    return;//カードを代入したらそこで終わり。
                 }
-                for (k = 0; k < SKILL_TYPE; k++)
-                {
-                    cardSkill[player, hand, k] = library[player, i, 2, k];//カードの効果を代入
-                }
-                library[player, i, 0, 0] = 0;//カードを引いたのでライブラリから消す。
-                libraryNum[player]--;//ライブラリの残り枚数を1減らす。
-                return;//カードを代入したらそこで終わり。
             }
+            if (GameObject.Find("BGMManager").GetComponent<BGMManager>().multiPlay != 0)
+            {
+                Match m1 = objMatch.GetComponent<Match>();
+                m1.DataChange(false);
+                //ドローは同期タイミング関係なく一方的に送信するのでwaitFlagは要らない。また、あるとbreak時に待ちぼうけになる（自分側でしかbreakの発生を認識できないため）。
+            }
+        }
+        else//通信相手のドローなら
+        {
+            ifa;//０枚から引いたことをどう判定する？
         }
         //ライブラリが切れていたら（ここまでreturnしてないということは引けるカードがないということ）クリアやゲームオーバー
         if (player == 0)//プレイヤーのライブラリ切れならゲームオーバー
         {
-            StartCoroutine(Lose());
+            StartCoroutine(Lose("-LibraryOut-"));
         }
         if (player == 1)//敵のライブラリ切れならクリア
         {
-            StartCoroutine(Win());
+            StartCoroutine(Win("-LibraryOut-"));
         }
     }
 
     //勝利
-    private IEnumerator Win()
+    private IEnumerator Win(string Case)
     {
         if (winloseFlag == false)//まだ勝ち負けが決まっていないなら（シーン移動が完了するまで並列でゲームは動き続けるので、winやlose関数が多重起動しないように）
         {
+            if (GameObject.Find("BGMManager").GetComponent<BGMManager>().multiPlay != 0)
+            {
+                objMatch.GetComponent<Match>().MatchEnd();
+            }
             seAudioSource[9].PlayOneShot(se[9]);
             objWinLose.gameObject.SetActive(true);
-            objWinLose.GetComponent<Text>().text = "<color=red>YOU WIN</color>";
+            objWinLose.GetComponent<Text>().text = "<color=red><size=240>YOU WIN</size><size=144>\n" + Case + "</size></color>";
             winloseFlag = true;
             yield return new WaitForSeconds(3.0f);
-            PlayerPrefs.SetInt("scenarioCount", PlayerPrefs.GetInt("scenarioCount", 0) + 1);//シナリオを進める。
-            yield return GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "StoryScene");//ストーリーシーンへ
+            if (GameObject.Find("BGMManager").GetComponent<BGMManager>().multiPlay != 0)
+            {
+                GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "SelectScene");
+            }
+            else
+            {
+                PlayerPrefs.SetInt("scenarioCount", PlayerPrefs.GetInt("scenarioCount", 0) + 1);//シナリオを進める。
+                yield return GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "StoryScene");//ストーリーシーンへ
+            }
         }
     }
 
 
     //敗北
-    private IEnumerator Lose()
+    private IEnumerator Lose(string Case)
     {
         if (winloseFlag == false)//まだ勝ち負けが決まっていないなら（シーン移動が完了するまで並列でゲームは動き続けるので、winやlose関数が多重起動しないように）
         {
+            if (GameObject.Find("BGMManager").GetComponent<BGMManager>().multiPlay != 0)
+            {
+                objMatch.GetComponent<Match>().MatchEnd();
+            }
             seAudioSource[9].PlayOneShot(se[9]);
             objWinLose.gameObject.SetActive(true);
-            objWinLose.GetComponent<Text>().text = "<color=blue>YOU LOSE</color>";
+            objWinLose.GetComponent<Text>().text = "<color=blue><size=240>YOU LOSE</size><size=144>\n" + Case + "</size></color>";
             winloseFlag = true;
             yield return new WaitForSeconds(3.0f);
-            yield return GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "GameOverScene");
+            if (GameObject.Find("BGMManager").GetComponent<BGMManager>().multiPlay != 0)
+            {
+                GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "SelectScene");
+            }
+            else
+            {
+                yield return GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "GameOverScene");
+            }
         }
     }
 
-
-    //ターン処理関数。
-    private IEnumerator TurnFunc()
+    //ターン処理時の使用カード確定関数
+    private void CardUse(int player)
     {
-        int i, j, k, l;
-        //第２種（特殊効果）呪文フェイズ→第１種（強化）呪文フェイズ→第３種（ダメージ）呪文フェイズ→シュジンコウ攻撃フェイズ→第０種（召喚呪文）フェイズの順で処理される。フェイズ妨害呪文は各フェイズの処理中に反映される（未実装）。
-
-        //使用カードの確定
-        for (l = 0; l < 2; l++)
+        int i, j, k;
+        for (i = 0; i < HAND_NUM; i++)
         {
-            for (i = 0; i < HAND_NUM; i++)
+            k = 0;
+            for (j = 1; j < BLOCKTYPE_NUM + 1; j++)
             {
-                k = 0;
-                for (j = 1; j < BLOCKTYPE_NUM + 1; j++)
-                {
-                    if (cardMana[l, i, j] < cardCost[l, i, j]) { k = 1; break; }//マナが足りていないのが判明した時点でそのカードについては処理終了。       
-                }
-                if (k == 0)                    //ここまでk=0のままならマナが全て足りているので使用確定。
-                {
-                    useCard[l, i] = true;//カードの使用確定
-                }
+                if (cardMana[player, i, j] < cardCost[player, i, j]) { k = 1; break; }//マナが足りていないのが判明した時点でそのカードについては処理終了。       
+            }
+            if (k == 0)                    //ここまでk=0のままならマナが全て足りているので使用確定。
+            {
+                useCard[player, i] = true;//カードの使用確定
             }
         }
-        phaseCount = "特殊呪文フェイズ";
-        //第２種呪文フェイズ
-        //２種呪文妨害（２種呪文を妨害する２種呪文(COUNTER)は相互作用を発生させるので、COUNTER同士では影響を与えない効果に＋他呪文と隔離。この種別だけはフェイズスキップも無視する）
+    }
+
+    //２種呪文の処理関数
+    private IEnumerator Spell2Func(int skill)
+    {
+        int i, l;
         for (l = 0; l < 2; l++)
         {
             for (i = 0; i < HAND_NUM; i++)
             {
-                if (useCard[l, i] == true && cardSkill[l, i, 2] == COUNTER)                    //使用確定カードで２種カウンターなら発動。
+                if (useCard[l, i] == true && cardSkill[l, i, 2] == skill)                    //使用確定カードで２種カウンターなら発動。
                 {
                     objCard[l, i].GetComponent<Image>().enabled = false;//使用したら非表示
                     seAudioSource[11].PlayOneShot(se[11]);
-                    yield return StartCoroutine(SpellEffect(l, i));//呪文演出
+                    if (skill != SUMMON) { yield return StartCoroutine(SpellEffect(l, i)); }//呪文演出(SUMMONは内蔵してるので飛ばす）
                     OtherSpell(l, handCard[l, i]);//呪文効果
                     while (cutInRunning == true) { yield return null; }//カットインが終わるまで待つ(OtherSpellは演出内蔵のものがあるので要カットイン待機)
                 }
             }
         }
+    }
+
+    //ターン処理関数
+    private IEnumerator TurnFunc()
+    {
+        int i, l;
+        //第２種（特殊効果）呪文フェイズ→第１種（強化）呪文フェイズ→第３種（ダメージ）呪文フェイズ→シュジンコウ攻撃フェイズ→第０種（召喚呪文）フェイズの順で処理される。
+        //使用カードの確定（自身）※送信処理前に確定させないと、同期待ち中に得たマナで使用されるカードが増えうる。
+        CardUse(0);
+        //通信対戦時の同期待ち（cardManaデータを一致させる）
+        phaseCount = "通信待機フェイズ";
+        StartCoroutine(WaitMatchData(300));//300フレームまで同期遅れを許容
+        //使用カードの確定（相手）
+        CardUse(1);
+
+        phaseCount = "特殊呪文フェイズ";
+        //第２種呪文フェイズ
+        //２種呪文妨害（２種呪文を妨害する２種呪文(COUNTER)は相互作用を発生させるので、COUNTER同士では影響を与えない効果に＋他呪文と隔離。この種別だけはフェイズスキップも無視する）
+        yield return StartCoroutine(Spell2Func(COUNTER));
+
         if (phaseSkipFlag[0] == false)
         {
             //２種召喚（召喚は他呪文との相互作用（ダメージ処理や強化等）が発生するので先行処理する）
-            for (l = 0; l < 2; l++)
-            {
-                for (i = 0; i < HAND_NUM; i++)
-                {
-                    if (useCard[l, i] == true && cardSkill[l, i, 2] == SUMMON)                    //使用確定カードで２種召喚なら発動。
-                    {
-                        objCard[l, i].GetComponent<Image>().enabled = false;//使用したら非表示
-                        seAudioSource[11].PlayOneShot(se[11]);
-                        OtherSpell(l, handCard[l, i]);//呪文効果
-                        while (cutInRunning == true) { yield return null; }//カットインが終わるまで待つ(OtherSpellは演出内蔵のものがあるので要カットイン待機)
-                    }
-                }
-            }
+            yield return StartCoroutine(Spell2Func(SUMMON));
+            //デッキ削り（デッキに作用する効果は相互作用を起こすので効果ごとに処理を分ける）
+            yield return StartCoroutine(Spell2Func(DECK_EAT));
+            //手札入れ替え
+            yield return StartCoroutine(Spell2Func(HAND_CHANGE));
             //その他の２種呪文
-            for (l = 0; l < 2; l++)
-            {
-                for (i = 0; i < HAND_NUM; i++)
-                {
-                    if (useCard[l, i] == true && cardSkill[l, i, 2] == OTHER)                    //使用確定カードで２種召喚や２種妨害でないなら発動。
-                    {
-                        objCard[l, i].GetComponent<Image>().enabled = false;//使用したら非表示
-                        seAudioSource[11].PlayOneShot(se[11]);
-                        yield return StartCoroutine(SpellEffect(l, i));//呪文演出
-                        OtherSpell(l, handCard[l, i]);//呪文効果
-                        while (cutInRunning == true) { yield return null; }//カットインが終わるまで待つ(OtherSpellは演出内蔵のものがあるので要カットイン待機)
-                    }
-                }
-            }
+            yield return StartCoroutine(Spell2Func(OTHER));
             yield return StartCoroutine(FollowerBreak());
             LifePointCheck();
         }
@@ -2017,11 +2048,11 @@ public class PuzzleSceneManager : MonoBehaviour
     {
         if (lifePoint[0] <= 0)//プレイヤーのlifepointが０以下ならゲームオーバー
         {
-            StartCoroutine(Lose());
+            StartCoroutine(Lose("-LostLifePoint-"));
         }
         if (lifePoint[1] <= 0)//敵のlifepointが０以下ならクリア
         {
-            StartCoroutine(Win());
+            StartCoroutine(Win("-LostLifePoint-"));
         }
     }
 
@@ -2037,16 +2068,20 @@ public class PuzzleSceneManager : MonoBehaviour
         }
         if (player == 1) { c1.EnemyDeckList(); }
         //デッキをライブラリに代入
-        for (i = 0; i < DECKCARD_NUM; i++)
+        if (player == 1 && GameObject.Find("BGMManager").GetComponent<BGMManager>().multiPlay != 0)
         {
-            if (player == 1 && GameObject.Find("BGMManager").GetComponent<BGMManager>().multiPlay != 0)
-            {
-                yield return StartCoroutine(WaitMatchData(600));//データ同期待ち
-            }
-            else
+            yield return StartCoroutine(WaitMatchData(600));//データ同期待ち
+        }
+        else
+        {
+            for (i = 0; i < DECKCARD_NUM; i++)
             {
                 library[player, i, 0, 0] = c1.deckCard[player, i];//カードの種類
             }
+        }
+        //カード番号が決まったなら、コストや効果をそれに合わせて代入
+        for (i = 0; i < DECKCARD_NUM; i++)
+        {
             for (j = 1; j < BLOCKTYPE_NUM + 1; j++)
             {
                 library[player, i, 1, j] = c1.cardCost[library[player, i, 0, 0], j];
@@ -2057,7 +2092,9 @@ public class PuzzleSceneManager : MonoBehaviour
             }//カードの効果
         }
         libraryNum[player] = DECKCARD_NUM;
-        Shuffle(player);
+        //シャッフル
+        if ((player == 1 && GameObject.Find("BGMManager").GetComponent<BGMManager>().multiPlay != 0) == false)
+        { Shuffle(player); }//通信対戦の相手から受信したライブラリはシャッフルしない。（相手方でシャッフル済）
     }
 
     //呪文詠唱時演出
@@ -2334,14 +2371,26 @@ public class PuzzleSceneManager : MonoBehaviour
         {
             Match m1 = objMatch.GetComponent<Match>();
             waitFlag = true;
+            m1.DataChange(true);
             for (int i = 0; i < flame; i++)
             {
-                m1.DataChange();
-                if (waitFlag == false) { yield break; }
+                if (waitFlag == false)
+                {
+                    break;
+                }
                 yield return null;
-            }
-            //待ってもレスポンスがなければ敗北扱いで終了。
-            Lose();
+            }//（先に送るのが早すぎてwaitFlagがtrueになる前にfalse化処理されるのを避けるために、１回目の送受信同期でwaitFlagのtrue化を待ち合わせたうえで２回目の送信で確実に渡す）
+            m1.DataChange(true);
+            for (int i = 0; i < flame; i++)
+            {
+                if (waitFlag == false)
+                {
+                    yield break;
+                }
+                yield return null;
+            }//ここで送受信を完了する。
+            //待ってもレスポンスがなければ勝利扱いで終了。
+            StartCoroutine(Win("-Disconnect-"));
         }
     }
 
@@ -2366,7 +2415,11 @@ public class PuzzleSceneManager : MonoBehaviour
     //戻るボタンの挙動
     public void BackButton()
     {
-        GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "SelectScene");
+        if (GameObject.Find("BGMManager").GetComponent<BGMManager>().multiPlay != 0)
+        {
+            objMatch.GetComponent<Match>().MatchEnd();
+        }
+            GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "SelectScene");
     }
 
 }
