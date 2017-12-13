@@ -636,7 +636,7 @@ public class CardData : MonoBehaviour {
         i = 59;
         cardName[i] = "墨塗り";
         cardExplain[i] = "<color=blue>墨塗り</color>\nコスト：黒10　　　　<b><color=black>Ｃ</color></b>\n対戦相手のライブラリを上から１枚捨てる。この呪文は特殊呪文として扱う。\n\n<i>黒塗りされたページ。</i>";
-        cardCost[i, 4] = 30;
+        cardCost[i, 4] = 10;
         cardSkill[i, 2] = DECK_EAT;
         cardSkill2Use[i] = new CardSkill2Delegate(Card59Skill2);
 

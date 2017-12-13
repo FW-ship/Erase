@@ -17,8 +17,8 @@ public class PhotonManager : MonoBehaviour {
         GameObject.Find("Placeholder").GetComponent<Text>().text= PlayerPrefs.GetString("userName", "ナナシ");
         for (int i = 0; i < ROOM_NUM; i++){ objRoom[i]=GameObject.Find("Room" + i.ToString());GameObject.Find("Room" + i.ToString()).SetActive(false);}//変数に入れてから非アクティブ化
         objBackLobbyButton=GameObject.Find("ButtonBackLobby");
-        objBackLobbyButton.SetActive(false);
-        objMakeRoomButton= GameObject.Find("ButtonMakeRoom");
+        objMakeRoomButton = GameObject.Find("ButtonMakeRoom");
+        objMakeRoomButton.SetActive(false);
         PhotonNetwork.ConnectUsingSettings("ver1.1");    //ロビー入室
     }
 	
@@ -27,9 +27,11 @@ public class PhotonManager : MonoBehaviour {
 		
 	}
 
-    //ロビーに入ると※現時点では中身なし。必要に応じて追加
+    //ロビーに入るとバックボタンの下からルーム作成ボタンが出て来る
     void OnJoinedLobby()
     {
+        objBackLobbyButton.SetActive(false);
+        objMakeRoomButton.SetActive(true);
     }
 
     //ルーム作成
@@ -91,12 +93,16 @@ public class PhotonManager : MonoBehaviour {
     void OnPhotonCreateRoomFailed(object[] codeAndMsg)
     {
         GameObject.Find("TitleText").GetComponent<Text>().text = "ルームが\n　　　つくれません。";
+        objMakeRoomButton.SetActive(false);
+        objBackLobbyButton.SetActive(true);
     }
 
     //部屋に入れなかった
     void OnPhotonJoinRoomFailed(object[] codeAndMsg)
     {
         GameObject.Find("TitleText").GetComponent<Text>().text = "ルームに\n　　　はいれません。";
+        objMakeRoomButton.SetActive(false);
+        objBackLobbyButton.SetActive(true);
     }
 
     //部屋からロビーに戻る
@@ -104,6 +110,7 @@ public class PhotonManager : MonoBehaviour {
     {
         objBackLobbyButton.SetActive(false);
         objMakeRoomButton.SetActive(true);
+        GameObject.Find("TitleText").GetComponent<Text>().text = "<color=red>ツウシン</color>\n　　　タイセン";
         PhotonNetwork.LeaveRoom();
     }
 

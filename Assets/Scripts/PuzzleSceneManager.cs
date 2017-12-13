@@ -113,9 +113,10 @@ public class PuzzleSceneManager : MonoBehaviour
 
     public int chainCount;                                                     //連鎖数
     public int nextTurnTime;                                                   //次のターンまでの残り時間
-    public bool waitFlag;                                                      //通信待機中か否かのフラグ
+    public bool[] libraryOutFlag = new bool[2];                                //ライブラリアウトが発生したかの判定
     public bool[] phaseSkipFlag = new bool[5];                                 //フェイズを飛ばすかどうかのフラグ
     public bool[,] useCard = new bool[2, HAND_NUM];                            //手札のカードが使われたか否か。trueなら使用されたということでターン終了時に新たなカードに変える（カードを引く）。
+    public int[] waitCount = new int[2];                                       //通信待機をここまで何回行ったか
     public int[] handFollower = new int[2];                                    //場に出ているシュジンコウ。０がプレイヤーで１がエネミー
     public int[] handFollowerForDraw = new int[2];                             //場に出ているシュジンコウの描写用変数。消滅演出の間にキャラクターを保持しておくため。
     public int[] libraryNum = new int[2];                                      //ライブラリの残り枚数
@@ -171,6 +172,8 @@ public class PuzzleSceneManager : MonoBehaviour
     // Use this for initialization
     void Start()
     {
+        waitCount[0] = 0;
+        waitCount[1] = 0;
         StartCoroutine(MainGame());
     }
 
@@ -284,6 +287,7 @@ public class PuzzleSceneManager : MonoBehaviour
         objStopButton = GameObject.Find("StopButton").gameObject as GameObject;
         objBackButton = GameObject.Find("BackButton").gameObject as GameObject;
         objBackButton.gameObject.SetActive(false);      //戻るボタンは一時停止中しか出てこない。
+        if (GameObject.Find("BGMManager").GetComponent<BGMManager>().multiPlay != 0){ objStopButton.gameObject.SetActive(false); }
 
         //連鎖数表示について描画用オブジェクトを変数に代入。
         objChainCount = GameObject.Find("chaincount").gameObject as GameObject;
@@ -367,8 +371,6 @@ public class PuzzleSceneManager : MonoBehaviour
         {
             GameObject.Find("BGMManager").GetComponent<BGMManager>().b1.bgmChangeFlag = true;//falseなら音楽は変えずにtrueに戻し、次回からまた変更されるようにする
         }
-
-
         for (i = 0; i < 2; i++)
         {
             yield return StartCoroutine(LibraryMake(i));//ライブラリ作成
@@ -403,6 +405,7 @@ public class PuzzleSceneManager : MonoBehaviour
 
         //ゲームの初期化
         InitGame();
+        yield return StartCoroutine(WaitMatchData(300));//スタートタイミングを合わせる同期
         GameObject.Find("NowLoading").GetComponent<Image>().enabled=false;
     }
 
@@ -410,6 +413,9 @@ public class PuzzleSceneManager : MonoBehaviour
     private void PuzzleVariableSetting()
     {
         int i, j, k, l;
+        libraryOutFlag[0] = false;
+        libraryOutFlag[1] = false;
+        stopFlag = false;
         lifePoint[0] = MAXPLAYERLIFE;
         lifePoint[1] = MAXENEMYLIFE;
         activeType = 0;
@@ -913,6 +919,8 @@ public class PuzzleSceneManager : MonoBehaviour
         chainEffectTime++;
         timeCount++;
         nextTurnTime--;
+
+        LibraryOutCheck();//ライブラリアウトが起きたかの判定。ブレイクタイミングでの負けを即座に判定するために毎フレーム判定（判定自体も軽い）
 
         if (nextTurnTime == 0)
         {
@@ -1648,6 +1656,7 @@ public class PuzzleSceneManager : MonoBehaviour
     public void DrawCard(int player, int hand)
     {
         int i, k;
+        //通信対戦で相手側のドローなら相手側で処理してくれるのでスキップ（それ以外の場合は処理）
         if (GameObject.Find("BGMManager").GetComponent<BGMManager>().multiPlay == 0 || player == 0)
         {
             for (i = 0; i < DECKCARD_NUM; i++)
@@ -1665,28 +1674,46 @@ public class PuzzleSceneManager : MonoBehaviour
                     }
                     library[player, i, 0, 0] = 0;//カードを引いたのでライブラリから消す。
                     libraryNum[player]--;//ライブラリの残り枚数を1減らす。
+                    if (GameObject.Find("BGMManager").GetComponent<BGMManager>().multiPlay != 0)
+                    {
+                        Match m1 = objMatch.GetComponent<Match>();
+                        m1.DataChange();
+                        //ドローは同期タイミング関係なく一方的に送信するのでwaitFlagは要らない。また、あるとbreak時に待ちぼうけになる（自分側でしかbreakの発生を認識できないため）。
+                    }
                     return;//カードを代入したらそこで終わり。
                 }
             }
-            if (GameObject.Find("BGMManager").GetComponent<BGMManager>().multiPlay != 0)
+            //ライブラリが切れていたら（ここまでreturnしてないということは引けるカードがないということ）クリアやゲームオーバー
+            //ここではlibraryOutFlagだけを変え、勝敗コルーチンへの移動はフェイズ終了時にまとめてやる（状況を変える判定はフェイズ終了時にまとめる。通信対戦の問題と、同フェイズ中の処理順問題を避けるため）
+            if (player == 0)//プレイヤーのライブラリ切れならゲームオーバー
             {
-                Match m1 = objMatch.GetComponent<Match>();
-                m1.DataChange(false);
-                //ドローは同期タイミング関係なく一方的に送信するのでwaitFlagは要らない。また、あるとbreak時に待ちぼうけになる（自分側でしかbreakの発生を認識できないため）。
+                libraryOutFlag[0] = true;
+                if (GameObject.Find("BGMManager").GetComponent<BGMManager>().multiPlay != 0)
+                {
+                    Match m1 = objMatch.GetComponent<Match>();
+                    m1.DataChange();
+                    //ドローは同期タイミング関係なく一方的に送信するのでwaitFlagは要らない。また、あるとbreak時に待ちぼうけになる（自分側でしかbreakの発生を認識できないため）。
+                }
+            }
+            if (player == 1)
+            {
+                libraryOutFlag[1] = true;
             }
         }
-        else//通信相手のドローなら
-        {
-            ifa;//０枚から引いたことをどう判定する？
-        }
-        //ライブラリが切れていたら（ここまでreturnしてないということは引けるカードがないということ）クリアやゲームオーバー
-        if (player == 0)//プレイヤーのライブラリ切れならゲームオーバー
+    }
+
+    private void LibraryOutCheck()
+    {
+        if (libraryOutFlag[0] == true)//プレイヤーのライブラリ切れならゲームオーバー
         {
             StartCoroutine(Lose("-LibraryOut-"));
+            return;
         }
-        if (player == 1)//敵のライブラリ切れならクリア
+
+        if (libraryOutFlag[1] == true)//敵のライブラリ切れならクリア
         {
             StartCoroutine(Win("-LibraryOut-"));
+            return;
         }
     }
 
@@ -1789,7 +1816,7 @@ public class PuzzleSceneManager : MonoBehaviour
         CardUse(0);
         //通信対戦時の同期待ち（cardManaデータを一致させる）
         phaseCount = "通信待機フェイズ";
-        StartCoroutine(WaitMatchData(300));//300フレームまで同期遅れを許容
+        yield return StartCoroutine(WaitMatchData(300));//300フレームまで同期遅れを許容
         //使用カードの確定（相手）
         CardUse(1);
 
@@ -1883,8 +1910,10 @@ public class PuzzleSceneManager : MonoBehaviour
             yield return StartCoroutine(FollowerBreak());
             LifePointCheck();
         }
-
         TurnEnd();//ターン終了処理
+        //通信対戦時の同期待ち（cardManaデータを一致させる）
+        phaseCount = "通信待機フェイズ";
+        yield return StartCoroutine(WaitMatchData(300));//300フレームまで同期遅れを許容
     }
 
     private void TurnEnd()
@@ -2070,7 +2099,7 @@ public class PuzzleSceneManager : MonoBehaviour
         //デッキをライブラリに代入
         if (player == 1 && GameObject.Find("BGMManager").GetComponent<BGMManager>().multiPlay != 0)
         {
-            yield return StartCoroutine(WaitMatchData(600));//データ同期待ち
+            yield return StartCoroutine(WaitMatchData(300));//データ同期待ち
         }
         else
         {
@@ -2079,7 +2108,7 @@ public class PuzzleSceneManager : MonoBehaviour
                 library[player, i, 0, 0] = c1.deckCard[player, i];//カードの種類
             }
         }
-        //カード番号が決まったなら、コストや効果をそれに合わせて代入
+        //カード番号が決まったなら、コストや効果をそれに合わせて代入(ライブラリが作成された段階でカードのデータも代入しておくことで、サーチカード等も実装しやすい）
         for (i = 0; i < DECKCARD_NUM; i++)
         {
             for (j = 1; j < BLOCKTYPE_NUM + 1; j++)
@@ -2370,25 +2399,16 @@ public class PuzzleSceneManager : MonoBehaviour
         if (GameObject.Find("BGMManager").GetComponent<BGMManager>().multiPlay != 0)
         {
             Match m1 = objMatch.GetComponent<Match>();
-            waitFlag = true;
-            m1.DataChange(true);
+            waitCount[0]++;
+            m1.DataChange();
             for (int i = 0; i < flame; i++)
             {
-                if (waitFlag == false)
-                {
-                    break;
-                }
-                yield return null;
-            }//（先に送るのが早すぎてwaitFlagがtrueになる前にfalse化処理されるのを避けるために、１回目の送受信同期でwaitFlagのtrue化を待ち合わせたうえで２回目の送信で確実に渡す）
-            m1.DataChange(true);
-            for (int i = 0; i < flame; i++)
-            {
-                if (waitFlag == false)
+                if (waitCount[0] == waitCount[1])
                 {
                     yield break;
                 }
                 yield return null;
-            }//ここで送受信を完了する。
+            }
             //待ってもレスポンスがなければ勝利扱いで終了。
             StartCoroutine(Win("-Disconnect-"));
         }
@@ -2415,10 +2435,6 @@ public class PuzzleSceneManager : MonoBehaviour
     //戻るボタンの挙動
     public void BackButton()
     {
-        if (GameObject.Find("BGMManager").GetComponent<BGMManager>().multiPlay != 0)
-        {
-            objMatch.GetComponent<Match>().MatchEnd();
-        }
             GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "SelectScene");
     }
 
