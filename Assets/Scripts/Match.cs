@@ -108,4 +108,4 @@ public class Match : Photon.MonoBehaviour {
         p1.libraryOutFlag[1] = libraryOutFlag;
     }
 }
-//同期待ちコルーチンが、同期を待てていない。・１ターン目のカード表示がおかしい
+//シュジンコウ継続効果実装、カード追加。

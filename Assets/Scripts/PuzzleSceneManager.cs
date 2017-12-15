@@ -142,6 +142,7 @@ public class PuzzleSceneManager : MonoBehaviour
     private GameObject objChainCount;                                                        //連鎖数表示のゲームオブジェクトを代入する
     private GameObject objField;                                                             //フィールドオブジェクト
     private GameObject objStopButton;                                                        //一時停止ボタンのゲームオブジェクト
+    private GameObject objBlockField;                                                        //ブロックを置く部分
     private Sprite[] blockImage = new Sprite[20];                                            //blockImageは各色のブロックの画像。（[]内は色と状態※block配列に入った数字と同じ）
     private Sprite[] stopImage = new Sprite[2];                                              //一時停止ボタン用画像
     private GameObject[] objLifeDamage = new GameObject[2];                                  //第三種（攻撃）呪文演出のオブジェクト
@@ -294,6 +295,7 @@ public class PuzzleSceneManager : MonoBehaviour
 
         //フィールド表示について描画用オブジェクトを変数に代入。
         objField = GameObject.Find("Field").gameObject as GameObject;
+        objBlockField= GameObject.Find("fieldback").gameObject as GameObject;
 
         //lifepoint表示について描画用オブジェクトを変数に代入
         for (i = 0; i < 2; i++)
@@ -371,6 +373,8 @@ public class PuzzleSceneManager : MonoBehaviour
         {
             GameObject.Find("BGMManager").GetComponent<BGMManager>().b1.bgmChangeFlag = true;//falseなら音楽は変えずにtrueに戻し、次回からまた変更されるようにする
         }
+        //通信対戦の場合、データ送信前に相手側が確実にシーン移動できるように5秒待つ。
+        if (GameObject.Find("BGMManager").GetComponent<BGMManager>().multiPlay != 0){ yield return new WaitForSeconds(5.0f); }
         for (i = 0; i < 2; i++)
         {
             yield return StartCoroutine(LibraryMake(i));//ライブラリ作成
@@ -1481,6 +1485,16 @@ public class PuzzleSceneManager : MonoBehaviour
             objNextBlock[i].GetComponent<Image>().sprite = blockImage[nextBlockOne[i]];
         }
 
+        //★連鎖中はブロックフィールドを暗くする
+        if (chainCount > 0)
+        {
+            objBlockField.GetComponent<Image>().color = new Color(0.5f, 0.5f, 0.5f, 1.0f);
+        }
+        else
+        {
+            objBlockField.GetComponent<Image>().color = new Color(1.0f, 1.0f, 1.0f, 1.0f);
+        }
+
         //★ステータスの描画★
         //連鎖数表示
         if (chainCountForDraw != 0 && chainEffectTime < 30)
@@ -1722,10 +1736,6 @@ public class PuzzleSceneManager : MonoBehaviour
     {
         if (winloseFlag == false)//まだ勝ち負けが決まっていないなら（シーン移動が完了するまで並列でゲームは動き続けるので、winやlose関数が多重起動しないように）
         {
-            if (GameObject.Find("BGMManager").GetComponent<BGMManager>().multiPlay != 0)
-            {
-                objMatch.GetComponent<Match>().MatchEnd();
-            }
             seAudioSource[9].PlayOneShot(se[9]);
             objWinLose.gameObject.SetActive(true);
             objWinLose.GetComponent<Text>().text = "<color=red><size=240>YOU WIN</size><size=144>\n" + Case + "</size></color>";
@@ -1733,6 +1743,7 @@ public class PuzzleSceneManager : MonoBehaviour
             yield return new WaitForSeconds(3.0f);
             if (GameObject.Find("BGMManager").GetComponent<BGMManager>().multiPlay != 0)
             {
+                objMatch.GetComponent<Match>().MatchEnd();
                 GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "SelectScene");
             }
             else
@@ -1749,10 +1760,6 @@ public class PuzzleSceneManager : MonoBehaviour
     {
         if (winloseFlag == false)//まだ勝ち負けが決まっていないなら（シーン移動が完了するまで並列でゲームは動き続けるので、winやlose関数が多重起動しないように）
         {
-            if (GameObject.Find("BGMManager").GetComponent<BGMManager>().multiPlay != 0)
-            {
-                objMatch.GetComponent<Match>().MatchEnd();
-            }
             seAudioSource[9].PlayOneShot(se[9]);
             objWinLose.gameObject.SetActive(true);
             objWinLose.GetComponent<Text>().text = "<color=blue><size=240>YOU LOSE</size><size=144>\n" + Case + "</size></color>";
@@ -1760,6 +1767,7 @@ public class PuzzleSceneManager : MonoBehaviour
             yield return new WaitForSeconds(3.0f);
             if (GameObject.Find("BGMManager").GetComponent<BGMManager>().multiPlay != 0)
             {
+                objMatch.GetComponent<Match>().MatchEnd();
                 GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "SelectScene");
             }
             else
@@ -1838,6 +1846,25 @@ public class PuzzleSceneManager : MonoBehaviour
             yield return StartCoroutine(FollowerBreak());
             LifePointCheck();
         }
+        else
+        {
+            //フェイズスキップ時はスペルミス演出とカード消去のみ
+            phaseCount = "×特殊呪文フェイズ";
+            for (l = 0; l < 2; l++)
+            {
+                for (i = 0; i < HAND_NUM; i++)
+                {
+                    if (useCard[l, i] == true && cardSkill[l, i, 2] != 0 && cardSkill[l, i, 2] != COUNTER)                    //使用確定カードで第二種呪文なら演出。
+                    {
+                        objCard[l, i].GetComponent<Image>().enabled = false;//使用したら非表示
+                        StartCoroutine("SpellMiss", l);//詠唱失敗演出を詠唱演出に重ねる。
+                        yield return StartCoroutine(SpellEffect(l, i));//呪文演出
+                        while (cutInRunning == true) { yield return null; }//カットインが終わるまで待つ
+                    }
+                }
+            }
+        }
+
         if (phaseSkipFlag[1] == false)
         {
             phaseCount = "強化呪文フェイズ";
@@ -1865,6 +1892,25 @@ public class PuzzleSceneManager : MonoBehaviour
             yield return StartCoroutine(FollowerBreak());
             LifePointCheck();
         }
+        else
+        {
+            //フェイズスキップ時はスペルミス演出とカード消去のみ
+            phaseCount = "×強化呪文フェイズ";
+            for (l = 0; l < 2; l++)
+            {
+                for (i = 0; i < HAND_NUM; i++)
+                {
+                    if (useCard[l, i] == true && cardSkill[l, i, 1] != 0)                    //使用確定カードで第一種呪文なら演出。
+                    {
+                        objCard[l, i].GetComponent<Image>().enabled = false;//使用したら非表示
+                        StartCoroutine("SpellMiss", l);//詠唱失敗演出を詠唱演出に重ねる。
+                        yield return StartCoroutine(SpellEffect(l, i));//呪文演出
+                        while (cutInRunning == true) { yield return null; }//カットインが終わるまで待つ
+                    }
+                }
+            }
+        }
+
         if (phaseSkipFlag[2] == false)
         {
             phaseCount = "攻撃呪文フェイズ";
@@ -1887,6 +1933,25 @@ public class PuzzleSceneManager : MonoBehaviour
             yield return StartCoroutine(FollowerBreak());
             LifePointCheck();
         }
+        else
+        {
+            //フェイズスキップ時はスペルミス演出とカード消去のみ
+            phaseCount = "×攻撃呪文フェイズ";
+            for (l = 0; l < 2; l++)
+            {
+                for (i = 0; i < HAND_NUM; i++)
+                {
+                    if (useCard[l, i] == true && cardSkill[l, i, 3] != 0)                    //使用確定カードで第三種呪文なら演出。
+                    {
+                        objCard[l, i].GetComponent<Image>().enabled = false;//使用したら非表示
+                        StartCoroutine("SpellMiss", l);//詠唱失敗演出を詠唱演出に重ねる。
+                        yield return StartCoroutine(SpellEffect(l, i));//呪文演出
+                        while (cutInRunning == true) { yield return null; }//カットインが終わるまで待つ
+                    }
+                }
+            }
+        }
+
         if (phaseSkipFlag[3] == false)
         {
             phaseCount = "戦闘フェイズ";
@@ -1899,6 +1964,7 @@ public class PuzzleSceneManager : MonoBehaviour
         {
             followerDamage[l] = 0;//シュジンコウダメージのリセット
         }
+
         if (phaseSkipFlag[4] == false)
         {
             phaseCount = "召喚呪文フェイズ";
@@ -1910,6 +1976,25 @@ public class PuzzleSceneManager : MonoBehaviour
             yield return StartCoroutine(FollowerBreak());
             LifePointCheck();
         }
+        else
+        {
+            //フェイズスキップ時はスペルミス演出とカード消去のみ
+            phaseCount = "×召喚呪文フェイズ";
+            for (l = 0; l < 2; l++)
+            {
+                for (i = 0; i < HAND_NUM; i++)
+                {
+                    if (useCard[l, i] == true && cardSkill[l, i, 0] != 0)                    //使用確定カードで第０種呪文なら演出。
+                    {
+                        objCard[l, i].GetComponent<Image>().enabled = false;//使用したら非表示
+                        StartCoroutine("SpellMiss", l);//詠唱失敗演出を詠唱演出に重ねる。
+                        yield return StartCoroutine(SpellEffect(l, i));//呪文演出
+                        while (cutInRunning == true) { yield return null; }//カットインが終わるまで待つ
+                    }
+                }
+            }
+        }
+
         TurnEnd();//ターン終了処理
         //通信対戦時の同期待ち（cardManaデータを一致させる）
         phaseCount = "通信待機フェイズ";
@@ -2107,6 +2192,8 @@ public class PuzzleSceneManager : MonoBehaviour
             {
                 library[player, i, 0, 0] = c1.deckCard[player, i];//カードの種類
             }
+            Shuffle(player);//シャッフル
+            yield return StartCoroutine(WaitMatchData(600));//データ同期待ち
         }
         //カード番号が決まったなら、コストや効果をそれに合わせて代入(ライブラリが作成された段階でカードのデータも代入しておくことで、サーチカード等も実装しやすい）
         for (i = 0; i < DECKCARD_NUM; i++)
@@ -2121,9 +2208,6 @@ public class PuzzleSceneManager : MonoBehaviour
             }//カードの効果
         }
         libraryNum[player] = DECKCARD_NUM;
-        //シャッフル
-        if ((player == 1 && GameObject.Find("BGMManager").GetComponent<BGMManager>().multiPlay != 0) == false)
-        { Shuffle(player); }//通信対戦の相手から受信したライブラリはシャッフルしない。（相手方でシャッフル済）
     }
 
     //呪文詠唱時演出

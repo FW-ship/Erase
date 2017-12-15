@@ -659,9 +659,10 @@ public class CardData : MonoBehaviour {
         cardSkill2Use[i] = new CardSkill2Delegate(Card61Skill2);
 
         i = 62;
-        cardName[i] = "心中";
-        cardExplain[i] = "<color=blue>心中</color>\nコスト：赤50黒50　　　　<b><color=#ff5000ff>Ｒ</color></b>\nあなたと対戦相手に、それぞれ10点のダメージを与える。この呪文は特殊呪文として扱う。\n\n<i>望んで迎えたバッドエンド。</i>";
-        cardCost[i, 4] = 30;
+        cardName[i] = "利己的な愛";
+        cardExplain[i] = "<color=blue>利己的な愛</color>\nコスト：赤50黒50　　　　<b><color=#ff5000ff>Ｒ</color></b>\nあなたと対戦相手に、それぞれ10点のダメージを与える。この呪文は特殊呪文として扱う。\n\n<i>望んで迎えたバッドエンド。</i>";
+        cardCost[i, 1] = 50;
+        cardCost[i, 4] = 50;
         cardSkill[i, 2] = OTHER;
         cardSkill2Use[i] = new CardSkill2Delegate(Card62Skill2);
 
@@ -860,32 +861,32 @@ public class CardData : MonoBehaviour {
 
     public void Card61Skill2(int usePlayer)
     {
+        int bufferFollower;
+        int[] bufferFollowerStatus=new int[3];
+        int bufferFollowerForDraw;
+
         PuzzleSceneManager p1 = GetComponent<PuzzleSceneManager>();
         p1.seAudioSource[14].PlayOneShot(p1.se[14]);
-        //相手がシュジンコウを持っていなければシュジンコウの押し付け処理
-        if (usePlayer == 0 && p1.handFollower[1] == 0)
+        //お互いにシュジンコウを持っていれば交換
+        if (p1.handFollower[0] != 0 && p1.handFollower[1] != 0)
         {
+            //自分のを相手へ
+            bufferFollower = p1.handFollower[1];
             p1.handFollower[1] = p1.handFollower[0];
-            p1.handFollower[0] = 0;
             for (int i = 0; i < 3; i++)
             {
+                bufferFollowerStatus[i]=p1.followerStatus[1, i];
                 p1.followerStatus[1, i] = p1.followerStatus[0, i];
-                p1.followerStatus[0, i] = 0;
             }
+            bufferFollowerForDraw=p1.handFollowerForDraw[1];
             p1.handFollowerForDraw[1] = p1.handFollowerForDraw[0];
-            p1.handFollowerForDraw[0] = 0;
-        }
-        if (usePlayer == 1 && p1.handFollower[0] == 0)
-        {
-            p1.handFollower[0] = p1.handFollower[1];
-            p1.handFollower[1] = 0;
+            //相手の（バッファに逃がしておいたもの）を自分へ
+            p1.handFollower[0] = bufferFollower;
             for (int i = 0; i < 3; i++)
             {
-                p1.followerStatus[0, i] = p1.followerStatus[1, i];
-                p1.followerStatus[1, i] = 0;
+                p1.followerStatus[0, i] = bufferFollowerStatus[i];
             }
-            p1.handFollowerForDraw[0] = p1.handFollowerForDraw[1];
-            p1.handFollowerForDraw[1] = 0;
+            p1.handFollowerForDraw[0] = bufferFollowerForDraw;
         }
     }
 

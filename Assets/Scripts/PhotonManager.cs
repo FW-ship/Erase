@@ -19,6 +19,7 @@ public class PhotonManager : MonoBehaviour {
         objBackLobbyButton=GameObject.Find("ButtonBackLobby");
         objMakeRoomButton = GameObject.Find("ButtonMakeRoom");
         objMakeRoomButton.SetActive(false);
+        objBackLobbyButton.SetActive(false);
         PhotonNetwork.ConnectUsingSettings("ver1.1");    //ロビー入室
     }
 	
