@@ -108,4 +108,4 @@ public class Match : Photon.MonoBehaviour {
         p1.libraryOutFlag[1] = libraryOutFlag;
     }
 }
-//シュジンコウ継続効果実装、カード追加。
+//新パック（オーバー分がパック資金になるシステムの導入）。★次回：一時強化カード＆システム実装

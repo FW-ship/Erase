@@ -21,6 +21,9 @@ public class SelectSceneManager : MonoBehaviour {
         objBook[0] = GameObject.Find("ButtonBlueBook").gameObject as GameObject;
         objBook[1] = GameObject.Find("ButtonRedBook").gameObject as GameObject;
         objBook[2] = GameObject.Find("ButtonGreenBook").gameObject as GameObject;
+
+        GameObject.Find("CoinText").GetComponent<Text>().text = "Coin:" + PlayerPrefs.GetInt("coin",0).ToString();
+
         for (int i = 0; i < CHAPTER_NUM; i++) { objBlackBookChapter[i] = GameObject.Find("ButtonBlackBook" + i.ToString()).gameObject as GameObject; }
 
         //名も無い本のチャプター表示はボタンを押すまでは非表示
@@ -54,7 +57,7 @@ public class SelectSceneManager : MonoBehaviour {
 
         //4章を見ていなければ扉は出ない。
         if (PlayerPrefs.GetInt("mainStory4", 0) < 2) { GameObject.Find("ButtonLeave").gameObject.SetActive(false); }
-
+        GameObject.Find("NowLoading").GetComponent<Image>().enabled = false;
     }
 	
 	// Update is called once per frame
@@ -171,6 +174,15 @@ public class SelectSceneManager : MonoBehaviour {
     {
         GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "MatchScene");
     }
+
+    public void PushGetPackButton()
+    {
+        PlayerPrefs.SetInt("scenarioCount", 100000);//パック選択画面へ
+        GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "StoryScene");
+    }
+
+
+
 
 
 }

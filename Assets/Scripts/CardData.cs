@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.UI;
 //using UnityEditor;
 
 [DefaultExecutionOrder(-1)]//CardDataは他から引用されるのでstartを先行処理させる。
@@ -161,6 +162,7 @@ public class CardData : MonoBehaviour {
         //①召喚について。AT…攻撃力。１ターンに１度この点数の攻撃を行う。DF…防御力。１ターンにこの点数以上のダメージを受けると破壊される。（ターンが終わればリセットされる）
         //②その他呪文について。スキルの処理についてはデリゲートによって配列管理した関数を使っている。
 
+        //初期カード群
         i = 1;
         cardName[i] = "ショック";
         cardExplain[i] = "<color=red>ショック</color>\nコスト：赤10　　　　<b><color=black>Ｃ</color></b>\n対戦相手に2点のダメージを与える。\n\n<i>衝撃と痛みと。</i>";
@@ -195,12 +197,13 @@ public class CardData : MonoBehaviour {
 
         i = 6;
         cardName[i] = "キャシー";
-        cardExplain[i] = "<color=green>キャシー</color>\nコスト：緑30青10　　　　<b><color=#a06000ff>ＵＣ</color></b>\nAT2/DF3\n\n<i>他の物語から紛れ込んだ１ページ。</i>";
+        cardExplain[i] = "<color=green>キャシー</color>\nコスト：緑30青10　　　　<b><color=#a06000ff>ＵＣ</color></b>\nAT2/DF3\n＜常在能力＞自身は各色１点のマナを獲得する。\n\n<i>他の物語から紛れ込んだ１ページ。</i>";
         cardCost[i, 3] = 30;
         cardCost[i, 2] = 10;
         cardSkill[i, 0] = SUMMON;
         followerStatus[i, 0] = 2;
         followerStatus[i, 1] = 3;
+        followerStatus[i, 2] = i;
 
         i = 7;
         cardName[i] = "水晶の剣";
@@ -247,20 +250,23 @@ public class CardData : MonoBehaviour {
 
         i = 13;
         cardName[i] = "コフィン";
-        cardExplain[i] = "<color=green>コフィン</color>\nコスト：緑4青4　　　　<b><color=#ff5000ff>Ｒ</color></b>\nAT1/DF2\n\n<i>他の物語から紛れ込んだ１ページ。</i>";
+        cardExplain[i] = "<color=green>コフィン</color>\nコスト：緑4青4　　　　<b><color=#ff5000ff>Ｒ</color></b>\nAT1/DF2\n＜常在能力＞自身は各色5点のマナを失う。\n\n<i>他の物語から紛れ込んだ１ページ。</i>";
         cardCost[i, 3] = 4;
         cardCost[i, 2] = 4;
         cardSkill[i, 0] = SUMMON;
         followerStatus[i, 0] = 1;
         followerStatus[i, 1] = 2;
+        followerStatus[i, 2] = i;
 
         i = 14;
         cardName[i] = "二首";
-        cardExplain[i] = "<color=green>二首</color>\nコスト：緑30　　　　<b><color=#a06000ff>ＵＣ</color></b>\nAT2/DF2\n\n<i>他の物語から紛れ込んだ１ページ。</i>";
-        cardCost[i, 3] = 30;
+        cardExplain[i] = "<color=green>二首</color>\nコスト：緑10青10　　　　<b><color=#a06000ff>ＵＣ</color></b>\nAT2/DF2\n＜常在能力＞自身のライブラリを上から１枚捨てる。\n\n<i>他の物語から紛れ込んだ１ページ。</i>";
+        cardCost[i, 2] = 10;
+        cardCost[i, 3] = 10;
         cardSkill[i, 0] = SUMMON;
         followerStatus[i, 0] = 2;
         followerStatus[i, 1] = 2;
+        followerStatus[i, 2] = i;
 
         i = 15;
         cardName[i] = "眠気";
@@ -443,7 +449,7 @@ public class CardData : MonoBehaviour {
 
         i = 37;
         cardName[i] = "チンピラ";
-        cardExplain[i] = "<color=green>チンピラ</color>\nコスト：緑30　　　　<b><color=#a06000ff>Ｃ</color></b>\nAT2/DF2\n\n<i>量産型チンピラ。数がいるので侮れない。</i>";
+        cardExplain[i] = "<color=green>チンピラ</color>\nコスト：緑30　　　　<b><color=black>Ｃ</color></b>\nAT2/DF2\n\n<i>量産型チンピラ。数がいるので侮れない。</i>";
         cardCost[i, 3] = 30;
         cardSkill[i, 0] = SUMMON;
         followerStatus[i, 0] = 2;
@@ -516,6 +522,7 @@ public class CardData : MonoBehaviour {
         cardSkill[i, 2] = OTHER;
         cardSkill2Use[i] = new CardSkill2Delegate(Card45Skill2);
 
+        //パック：幸福な王子
         i = 46;
         cardName[i] = "召喚阻害";
         cardExplain[i] = "<color=blue>召喚阻害</color>\nコスト：青10緑10黒10　　　　<b><color=#a06000ff>ＵＣ</color></b>\nこのターンの召喚フェイズを飛ばす（使用されるはずだった呪文はそのまま捨てられる）。この呪文は特殊呪文として扱う。\n\n<i>助けを呼ぶ声は届かない。</i>";
@@ -545,7 +552,7 @@ public class CardData : MonoBehaviour {
 
         i = 49;
         cardName[i] = "戦闘阻害";
-        cardExplain[i] = "<color=blue>戦闘阻害</color>\nコスト：緑4黒4黄4　　　　<b><color=#a06000ff>ＵＣ</color></b>\n戦闘フェイズを飛ばす。この呪文は特殊呪文として扱う。\n\n<i>動けなくても時間は進む。</i>";
+        cardExplain[i] = "<color=blue>戦闘阻害</color>\nコスト：緑4黒4黄4　　　　<b><color=#a06000ff>ＵＣ</color></b>\nこのターンの常在能力フェイズと戦闘フェイズを飛ばす。この呪文は特殊呪文として扱う。\n\n<i>動けなくても時間は進む。</i>";
         cardCost[i, 3] = 4;
         cardCost[i, 4] = 4;
         cardCost[i, 5] = 4;
@@ -554,7 +561,7 @@ public class CardData : MonoBehaviour {
 
         i = 50;
         cardName[i] = "特殊阻害";
-        cardExplain[i] = "<color=blue>特殊阻害</color>\nコスト：青10赤10緑10　　　　<b><color=#a06000ff>ＵＣ</color></b>\n特殊呪文フェイズを飛ばす。この呪文は特殊呪文として扱う。\n\n<i>逃げ足は誰より早い。</i>";
+        cardExplain[i] = "<color=blue>特殊阻害</color>\nコスト：青10赤10緑10　　　　<b><color=#a06000ff>ＵＣ</color></b>\nこのターンの特殊呪文フェイズを飛ばす。この呪文は特殊呪文として扱う。\n\n<i>逃げ足は誰より早い。</i>";
         cardCost[i, 1] = 10;
         cardCost[i, 2] = 10;
         cardCost[i, 3] = 10;
@@ -665,6 +672,153 @@ public class CardData : MonoBehaviour {
         cardCost[i, 4] = 50;
         cardSkill[i, 2] = OTHER;
         cardSkill2Use[i] = new CardSkill2Delegate(Card62Skill2);
+
+        //パック：アリス
+        i = 63;
+        cardName[i] = "チェシャ猫";
+        cardExplain[i] = "<color=green>チェシャ猫</color>\nコスト：緑20青20黒10　　　　<b><color=#a06000ff>Ｒ</color></b>\nAT2/DF2\n＜常在能力＞このターン使用されないカードをライブラリに戻す。\n\n<i>神出鬼没な道化。そして、もう一人の案内人。</i>";
+        cardCost[i, 2] = 20;
+        cardCost[i, 3] = 20;
+        cardCost[i, 4] = 10;
+        cardSkill[i, 0] = SUMMON;
+        followerStatus[i, 0] = 2;
+        followerStatus[i, 1] = 2;
+        followerStatus[i, 2] = i;
+
+        i = 64;
+        cardName[i] = "アリス";
+        cardExplain[i] = "<color=green>アリス</color>\nコスト：緑10青10　　　　<b><color=#a06000ff>Ｒ</color></b>\nAT0/DF1\n＜常在能力＞お互いのライブラリをリセットする。（手札や場の状況には影響しない）\n\n<i>有り得ぬ世界を眺める空想の主。</i>";
+        cardCost[i, 2] = 10;
+        cardCost[i, 3] = 10;
+        cardSkill[i, 0] = SUMMON;
+        followerStatus[i, 0] = 0;
+        followerStatus[i, 1] = 1;
+        followerStatus[i, 2] = i;
+
+        i = 65;
+        cardName[i] = "ハートの女王";
+        cardExplain[i] = "<color=green>ハートの女王</color>\nコスト：緑20赤20黄40　　　　<b><color=#a06000ff>Ｒ</color></b>\nAT2/DF3\n＜常在能力＞このシュジンコウのATを+1する。\n\n<i>癇癪持ちの女王様。</i>";
+        cardCost[i, 1] = 20;
+        cardCost[i, 3] = 20;
+        cardCost[i, 5] = 40;
+        cardSkill[i, 0] = SUMMON;
+        followerStatus[i, 0] = 2;
+        followerStatus[i, 1] = 3;
+        followerStatus[i, 2] = i;
+
+        i = 66;
+        cardName[i] = "三月ウサギ";
+        cardExplain[i] = "<color=green>三月ウサギ</color>\nコスト：緑10黄30　　　　<b><color=#a06000ff>ＵＣ</color></b>\nAT0/DF1\n＜常在能力＞このシュジンコウのDFを+1する。\n\n<i>狂った世界と狂った感性、本当に狂っているのは誰だろう。</i>";
+        cardCost[i, 3] = 10;
+        cardCost[i, 5] = 30;
+        cardSkill[i, 0] = SUMMON;
+        followerStatus[i, 0] = 0;
+        followerStatus[i, 1] = 1;
+        followerStatus[i, 2] = i;
+
+        i = 67;
+        cardName[i] = "白ウサギ";
+        cardExplain[i] = "<color=green>白ウサギ</color>\nコスト：緑4黄4　　　　<b><color=#a06000ff>Ｒ</color></b>\nAT1/DF6\n＜常在能力＞このシュジンコウのDFを-1する。\n\n<i>夢の世界に飛び込むきっかけ。</i>";
+        cardCost[i, 3] = 4;
+        cardCost[i, 5] = 4;
+        cardSkill[i, 0] = SUMMON;
+        followerStatus[i, 0] = 1;
+        followerStatus[i, 1] = 6;
+        followerStatus[i, 2] = i;
+
+        i = 68;
+        cardName[i] = "公爵夫人";
+        cardExplain[i] = "<color=green>公爵夫人</color>\nコスト：緑10黒30　　　　<b><color=#a06000ff>ＵＣ</color></b>\nAT0/DF1\n＜常在能力＞対戦相手のシュジンコウのDFを-1する。\n\n<i>ざわ・・・ざわ・・・。</i>";
+        cardCost[i, 3] = 10;
+        cardCost[i, 4] = 30;
+        cardSkill[i, 0] = SUMMON;
+        followerStatus[i, 0] = 0;
+        followerStatus[i, 1] = 1;
+        followerStatus[i, 2] = i;
+
+        i = 69;
+        cardName[i] = "眠りネズミ";
+        cardExplain[i] = "<color=green>眠りネズミ</color>\nコスト：緑10黄20　　　　<b><color=#a06000ff>ＵＣ</color></b>\nAT0/DF1\n＜常在能力＞対戦相手のシュジンコウのATを-1する。\n\n<i>ティーポットの中で冬眠中。</i>";
+        cardCost[i, 3] = 10;
+        cardCost[i, 5] = 30;
+        cardSkill[i, 0] = SUMMON;
+        followerStatus[i, 0] = 0;
+        followerStatus[i, 1] = 1;
+        followerStatus[i, 2] = i;
+
+        i = 70;
+        cardName[i] = "代用ウミガメ";
+        cardExplain[i] = "<color=green>代用ウミガメ</color>\nコスト：緑5赤5　　　　<b><color=#a06000ff>ＵＣ</color></b>\nAT0/DF1\n＜常在能力＞対戦相手に１点のダメージを与える。\n\n<i>偽物の人生。</i>";
+        cardCost[i, 1] = 5;
+        cardCost[i, 3] = 5;
+        cardSkill[i, 0] = SUMMON;
+        followerStatus[i, 0] = 0;
+        followerStatus[i, 1] = 1;
+        followerStatus[i, 2] = i;
+
+        i = 71;
+        cardName[i] = "クラブのトランプ";
+        cardExplain[i] = "<color=green>クラブのトランプ</color>\nコスト：緑20赤20　　　　<b><color=black>Ｃ</color></b>\nAT1/DF1\n＜常在能力＞対戦相手に１点のダメージを与える。\n\n<i>頼りないトランプの兵士。</i>";
+        cardCost[i, 1] = 20;
+        cardCost[i, 3] = 20;
+        cardSkill[i, 0] = SUMMON;
+        followerStatus[i, 0] = 1;
+        followerStatus[i, 1] = 1;
+        followerStatus[i, 2] = i;
+
+        i = 72;
+        cardName[i] = "ハートのトランプ";
+        cardExplain[i] = "<color=green>ハートのトランプ</color>\nコスト：緑10黄10　　　　<b><color=black>Ｃ</color></b>\nAT1/DF1\n＜常在能力＞自身は１点のライフを回復する。\n\n<i>間の抜けたトランプの貴族。</i>";
+        cardCost[i, 3] = 10;
+        cardCost[i, 5] = 10;
+        cardSkill[i, 0] = SUMMON;
+        followerStatus[i, 0] = 1;
+        followerStatus[i, 1] = 1;
+        followerStatus[i, 2] = i;
+
+        i = 73;
+        cardName[i] = "スペードのトランプ";
+        cardExplain[i] = "<color=green>スペードのトランプ</color>\nコスト：緑20黒20　　　　<b><color=black>Ｃ</color></b>\nAT0/DF1\n＜常在能力＞自身のライブラリの枚数が20枚未満ならば、その一番上に「速読」のカードを置く。\n\n<i>手際の悪いトランプの庭師。</i>";
+        cardCost[i, 3] = 20;
+        cardCost[i, 5] = 20;
+        cardSkill[i, 0] = SUMMON;
+        followerStatus[i, 0] = 0;
+        followerStatus[i, 1] = 1;
+        followerStatus[i, 2] = i;
+
+        i = 74;
+        cardName[i] = "ダイヤのトランプ";
+        cardExplain[i] = "<color=green>ダイヤのトランプ</color>\nコスト：緑30青30　　　　<b><color=black>Ｃ</color></b>\nAT0/DF1\n＜常在能力＞対戦相手のライブラリを上から１枚捨てる。\n\n<i>あくどいトランプの官僚。</i>";
+        cardCost[i, 2] = 30;
+        cardCost[i, 3] = 30;
+        cardSkill[i, 0] = SUMMON;
+        followerStatus[i, 0] = 0;
+        followerStatus[i, 1] = 1;
+        followerStatus[i, 2] = i;
+
+        i = 75;
+        cardName[i] = "不思議な小瓶";
+        cardExplain[i] = "<color=olive>不思議な小瓶</color>\nコスト：黒4　　　　<b><color=black>Ｃ</color></b>\n自身のシュジンコウのATとDFを-1する。\n\n<i>時には小さいことが役に立つ。</i>";
+        cardCost[i, 4] = 4;
+        cardSkill[i, 1] = OWN;
+        followerStatus[i, 0] = -1;
+        followerStatus[i, 1] = -1;
+
+        i = 76;
+        cardName[i] = "不思議なケーキ";
+        cardExplain[i] = "<color=olive>不思議なケーキ</color>\nコスト：黄10　　　　<b><color=black>Ｃ</color></b>\n自身のシュジンコウのATとDFを+1する。\n\n<i>大きいことはいいことだ。</i>";
+        cardCost[i, 5] = 10;
+        cardSkill[i, 1] = OWN;
+        followerStatus[i, 0] = 1;
+        followerStatus[i, 1] = 1;
+
+        i = 77;
+        cardName[i] = "コショウ";
+        cardExplain[i] = "<color=olive>コショウ</color>\nコスト：黒10　　　　<b><color=black>Ｃ</color></b>\n対戦相手のシュジンコウのATとDFを-1する。\n\n<i>香辛料とハサミは使いよう。</i>";
+        cardCost[i, 4] = 10;
+        cardSkill[i, 1] = YOURS;
+        followerStatus[i, 0] = -1;
+        followerStatus[i, 1] = -1;
 
 
 
@@ -959,9 +1113,161 @@ public class CardData : MonoBehaviour {
         }
     }
 
+    //カードをライブラリに戻す
+    public void HandEscape(int player,PuzzleSceneManager p1)
+    {
+        for (int i = 0; i < HAND_NUM; i++)
+        {
+            if (p1.useCard[player, i] == false)
+            {
+                LibraryPut(player,p1.handCard[player,i],p1);
+                p1.useCard[player, i] = true;
+                p1.objCard[player, i].GetComponent<Image>().enabled = false;//戻したので非表示
+            }
+        }
+    }
+
+    //ライブラリの一番上にカードを置く
+    public void LibraryPut(int player, int card,PuzzleSceneManager p1)
+    {
+        int i;
+        if (p1.library[player, 0, 0, 0] == 0)//ライブラリが一杯でない時のみ
+        {
+            CardList();
+            p1.library[player, 0, 0, 0] = card;
+            //今あるカードの上に持って行く
+            for (i = DECKCARD_NUM-1; i >0; i--)
+            {
+                if (p1.library[player, i, 0, 0] != 0)
+                {
+                    continue;
+                }//カードがあるなら次を探査
+                else
+                {
+                    p1.library[player, i, 0, 0] = p1.library[player, 0, 0, 0];
+                    p1.library[player, 0, 0, 0] = 0;
+                    break;
+                }
+            }
+            for (int j = 1; j < BLOCKTYPE_NUM + 1; j++)
+            {
+                p1.library[player, i, 1, j] = cardCost[p1.library[player, i, 0, 0], j];
+            }//カードのコスト
+            for (int j = 0; j < SKILL_TYPE; j++)
+            {
+                p1.library[player, i, 2, j] = cardSkill[p1.library[player, i, 0, 0], j];
+            }//カードの効果
+        }
+    }
 
 
+    //★シュジンコウの特殊能力関数★
+    public void FollowerSkill(int player)
+    {
+        string name="";
+        string explain = "";
+        PuzzleSceneManager p1 = GetComponent<PuzzleSceneManager>();
+        if (p1.followerStatus[player, 2] == 6)
+        {
+            name = "＜キャシー＞不屈の心";
+            explain = "自身は各色１点のマナを獲得する。";
+            Slip(player, -1);
+        }
+        if (p1.followerStatus[player, 2] == 13)
+        {
+            name = "＜コフィン＞不幸体質";
+            explain = "自身は各色５点のマナを失う。";
+            Slip(player, 5);
+        }
+        if (p1.followerStatus[player, 2] == 14)
+        {
+            name = "＜二首＞余計な頭";
+            explain = "自身のライブラリを上から１枚捨てる。";
+            LibraryBreak(player, 1);
+        }
+        if (p1.followerStatus[player, 2] == 63)
+        {
+            name = "＜チェシャ猫＞神出鬼没";
+            explain = "このターン使用されないカードをライブラリに戻す。";
+            HandEscape(player,p1);
+        }
+        if (p1.followerStatus[player, 2] == 64)
+        {
+            name = "＜アリス＞空想癖";
+            explain = "お互いのライブラリをリセットする。（手札や場の状況には影響しない）";
+            p1.LibraryMake(0);
+            p1.LibraryMake(1);
+        }
+        if (p1.followerStatus[player, 2] == 65)
+        {
+            name = "＜ハートの女王＞癇癪持ち";
+            explain = "このシュジンコウのATを+1する。";
+            p1.followerStatus[player,0]++;
+        }
+        if (p1.followerStatus[player, 2] == 66)
+        {
+            name = "＜三月ウサギ＞鋼鉄メンタル";
+            explain = "このシュジンコウのDFを+1する。";
+            p1.followerStatus[player, 1]++;
+        }
+        if (p1.followerStatus[player, 2] == 67)
+        {
+            name = "＜白ウサギ＞生真面目";
+            explain = "このシュジンコウのDFを-1する。";
+            p1.followerStatus[player, 1]--;
+        }
+        if (p1.followerStatus[player, 2] == 68)
+        {
+            name = "＜公爵夫人＞アゴ";
+            explain = "対戦相手のシュジンコウのDFを-1する。";
+            if (player == 0) { p1.followerStatus[1, 1]--;}
+            if (player == 1) { p1.followerStatus[0, 1]--;}
+        }
+        if (p1.followerStatus[player, 2] == 69)
+        {
+            name = "＜眠りネズミ＞だらけた空気";
+            explain = "対戦相手のシュジンコウのATを-1する。";
+            if (player == 0) { p1.followerStatus[1, 0]--; }
+            if (player == 1) { p1.followerStatus[0, 0]--; }
+        }
+        if (p1.followerStatus[player, 2] == 70)
+        {
+            name = "＜代用ウミガメ＞ウミガメのスープ";
+            explain = "対戦相手に１点のダメージを与える。";
+            p1.seAudioSource[1].PlayOneShot(p1.se[1]);
+            if (player == 0) { StartCoroutine(p1.Damage(1, 1)); StartCoroutine(p1.LifeDamage(1)); }
+            if (player == 1) { StartCoroutine(p1.Damage(0, 1)); StartCoroutine(p1.LifeDamage(0)); }
+        }
+        if (p1.followerStatus[player, 2] == 71)
+        {
+            name = "＜クラブのトランプ＞数の暴力";
+            explain = "対戦相手に１点のダメージを与える。";
+            p1.seAudioSource[1].PlayOneShot(p1.se[1]);
+            if (player == 0) { StartCoroutine(p1.Damage(1, 1)); StartCoroutine(p1.LifeDamage(1)); }
+            if (player == 1) { StartCoroutine(p1.Damage(0, 1)); StartCoroutine(p1.LifeDamage(0)); }
+        }
+        if (p1.followerStatus[player, 2] == 72)
+        {
+            name = "＜ハートのトランプ＞盗み食い";
+            explain = "自身は１点のライフを回復する。";
+            p1.lifePoint[player]++;
+        }
+        if (p1.followerStatus[player, 2] == 73)
+        {
+            name = "＜スペードのトランプ＞庭いじり";
+            explain = "自身のライブラリの枚数が20枚未満ならば、その一番上に「速読」のカードを置く。";
+            LibraryPut(player, 19, p1);
+        }
+        if (p1.followerStatus[player, 2] == 74)
+        {
+            name = "＜ダイヤのトランプ＞横領";
+            explain = "対戦相手のライブラリを上から１枚捨てる。";
+            if (player == 0) { LibraryBreak(1, 1); }
+            if (player == 1) { LibraryBreak(0, 1); }
+        }
 
+        StartCoroutine(p1.FollowerSkillCutIn(player,name,explain));
+    }
 
 
     // Use this for initialization

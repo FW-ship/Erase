@@ -8,6 +8,7 @@ public class Utility : MonoBehaviour {
     private GameObject objBGM;                                  //BGMのオブジェクト
     private bool fadeFlag;                                      //フェードイン・フェードアウト中か否か
     public bool pushObjectFlag;                                 //ボタンオブジェクトのタップ(true)か画面自体（ストーリー進行）のタップ(false)かの判定
+    public bool selectFlag;                                     //選択待ち中、どれかが選択されたか否かの判定
 
     // Use this for initialization
     void Start () {
@@ -117,6 +118,16 @@ public class Utility : MonoBehaviour {
             {
                 yield return null;
             }
+        }
+    }
+
+    public IEnumerator SelectWait()
+    {
+        selectFlag = false;
+        while (true)//ループを続ける。
+        {
+            yield return null;
+            if (selectFlag == true) { break; }
         }
     }
 

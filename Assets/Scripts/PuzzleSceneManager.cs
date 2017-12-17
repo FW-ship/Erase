@@ -156,11 +156,13 @@ public class PuzzleSceneManager : MonoBehaviour
     private GameObject[] objShock = new GameObject[2];                                       //呪文の失敗演出用の衝撃マークを表示するオブジェクト
     private GameObject[] objTarai = new GameObject[2];                                       //呪文の失敗演出用の金盥を表示するオブジェクト
     private GameObject[] objLifePoint = new GameObject[2];                                   //lifepointのゲームオブジェクトを代入する(0がＰＬ、1が敵）
-    private GameObject[,] objCard = new GameObject[2, HAND_NUM];                             //objCardは手札のカードのゲームオブジェクト（描画されるブロック）を代入する配列。
     private GameObject[,] objFieldBlock = new GameObject[WORLD_WIDTH, WORLD_HEIGHT];         //objはフィールドブロックのゲームオブジェクト（描画されるブロック）を代入する配列。
     private GameObject[,] objFollowerStatus = new GameObject[2, 2];                          //シュジンコウのATDFのゲームオブジェクトを代入する配列
     private GameObject[,] objEliminatBlock = new GameObject[WORLD_WIDTH, WORLD_HEIGHT];      //各ブロックの消去時演出用オブジェクト
     private GameObject[,,] objCardMana = new GameObject[2, HAND_NUM, BLOCKTYPE_NUM + 1];     //カードの残り必要マナ表示
+
+    public GameObject[,] objCard = new GameObject[2, HAND_NUM];                             //objCardは手札のカードのゲームオブジェクト（描画されるブロック）を代入する配列。
+
 
     public List<AudioSource> seAudioSource = new List<AudioSource>();                      //効果音のオーディオソース（音程変更等で効果音ごとに触るので各効果音ごとに取得）
     public List<AudioClip> se = new List<AudioClip>();                                     //効果音のオーディオクリップ
@@ -1954,12 +1956,28 @@ public class PuzzleSceneManager : MonoBehaviour
 
         if (phaseSkipFlag[3] == false)
         {
+            phaseCount = "常在能力フェイズ";
+            for (l = 0; l < 2; l++)
+            {
+                if (followerStatus[l, 2] != 0)                    //シュジンコウが特殊効果を持っていたならば
+                {
+                    seAudioSource[11].PlayOneShot(se[11]);
+                    CardData c1 = GetComponent<CardData>();
+                    c1.FollowerSkill(l);//フォロワースキル発生
+                                        //スキル演出（呪文演出とは別に、フォロワースキル関数内に新たに作る。カットインキャラはシュジンコウ、説明文は関数内で設定）
+                    while (cutInRunning == true) { yield return null; }//カットインが終わるまで待つ(OtherSpellは演出内蔵のものがあるので要カットイン待機)
+                }
+            }
+            yield return StartCoroutine(FollowerBreak());
+            LifePointCheck();
+
             phaseCount = "戦闘フェイズ";
             //戦闘フェイズ
             yield return StartCoroutine("FollowerAttack");
             yield return StartCoroutine(FollowerBreak());
             LifePointCheck();
         }
+
         for (l = 0; l < 2; l++)
         {
             followerDamage[l] = 0;//シュジンコウダメージのリセット
@@ -2121,10 +2139,13 @@ public class PuzzleSceneManager : MonoBehaviour
     public IEnumerator LifeDamage(int player)
     {
         //playerの炎上演出をオンに
-        objLifeDamage[player].GetComponent<Image>().enabled = true; objLifeDamage[player].GetComponent<Animator>().enabled = true;
-        for (int i = 0; i < 30; i++) { yield return null; }//演出フレームが終わるまで待つ。
-        //演出をオフに戻す
-        objLifeDamage[player].GetComponent<Image>().enabled = false; objLifeDamage[player].GetComponent<Animator>().enabled = false;
+        if (handFollower[player] == 0)
+        {
+            objLifeDamage[player].GetComponent<Image>().enabled = true; objLifeDamage[player].GetComponent<Animator>().enabled = true;
+            for (int i = 0; i < 30; i++) { yield return null; }//演出フレームが終わるまで待つ。
+                                                               //演出をオフに戻す
+            objLifeDamage[player].GetComponent<Image>().enabled = false; objLifeDamage[player].GetComponent<Animator>().enabled = false;
+        }
     }
 
     //シュジンコウ破壊チェック。シュジンコウの受けたダメージがDFを越えていたら破壊される。
@@ -2231,6 +2252,43 @@ public class PuzzleSceneManager : MonoBehaviour
             objCutIn[player].GetComponentInChildren<Text>().text += "</size>";
         }//通常handは３未満。
         if (hand == 3) { objCutIn[player].GetComponentInChildren<Text>().text += missSpellName + "？\n(多重召喚)"; }//多重召喚失敗時のhandが3。その専用処理。
+        objCutIn[player].GetComponentInChildren<Text>().text += "</color>";
+
+        for (i = 0; i < 10; i++)
+        {
+            if (player == 0) { objCutIn[player].GetComponent<RectTransform>().localPosition = new Vector3(PLAYER_SPELL_POSITION_X - 500 + 50 * i, PLAYER_SPELL_POSITION_Y, 0); }
+            if (player == 1) { objCutIn[player].GetComponent<RectTransform>().localPosition = new Vector3(ENEMY_SPELL_POSITION_X + 500 - 50 * i, ENEMY_SPELL_POSITION_Y, 0); }
+            yield return null;
+        }
+        if (player == 0) { objCutIn[player].GetComponent<RectTransform>().localPosition = new Vector3(PLAYER_SPELL_POSITION_X, PLAYER_SPELL_POSITION_Y, 0); }//出てきたら位置を固定
+        if (player == 1) { objCutIn[player].GetComponent<RectTransform>().localPosition = new Vector3(ENEMY_SPELL_POSITION_X, ENEMY_SPELL_POSITION_Y, 0); }
+        for (i = 0; i < SPELL_TIME - 10; i++)//そのまま演出の残り時間を待つ。（SpellMissと同時並行でコルーチンを回している場合は、ここのループの間にSpellMiss側でobjcutinに変更を加える）
+        {
+            yield return null;
+        }
+        if (player == 0) { objCutIn[player].GetComponent<RectTransform>().localPosition = new Vector3(PLAYER_SPELL_POSITION_X - 500, PLAYER_SPELL_POSITION_Y, 0); }
+        if (player == 1) { objCutIn[player].GetComponent<RectTransform>().localPosition = new Vector3(ENEMY_SPELL_POSITION_X + 500, ENEMY_SPELL_POSITION_Y, 0); }
+        objCutIn[player].GetComponentInChildren<Text>().text = "";
+        objCutIn[player].GetComponent<Image>().enabled = false;
+        cutInRunning = false;
+    }
+
+    //シュジンコウ常在効果のカットイン
+    public IEnumerator FollowerSkillCutIn(int player, string name, string explain)//playerがＰＬエネミー、nameが能力名、explainが能力説明
+    {
+        int i;
+        cutInRunning = true;
+        CardData c1 = GetComponent<CardData>();
+        c1.CardList();
+        objCutIn[player].GetComponent<Image>().enabled = true;
+
+        if (player == 0) { objCutIn[player].GetComponentInChildren<Text>().text += "<color=red>"; }
+        if (player == 1) { objCutIn[player].GetComponentInChildren<Text>().text += "<color=blue>"; }
+
+        objCutIn[player].GetComponentInChildren<Text>().text += name;
+        objCutIn[player].GetComponentInChildren<Text>().text += "\n<size=24>";
+        objCutIn[player].GetComponentInChildren<Text>().text += explain;
+        objCutIn[player].GetComponentInChildren<Text>().text += "</size>";
         objCutIn[player].GetComponentInChildren<Text>().text += "</color>";
 
         for (i = 0; i < 10; i++)

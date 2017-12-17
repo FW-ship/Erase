@@ -3,7 +3,7 @@ using UnityEngine.UI;
 using System.Collections.Generic;
 
 public class MakeBookSceneManager : MonoBehaviour {
-    const int CARD_ALL = 62;                     //カードの全種類数。
+    const int CARD_ALL = 77;                     //カードの全種類数。
     const int BLOCKTYPE_NUM = 5;                 //ブロックの色の種類数
     const int SKILL_TYPE = 4;                    //カードのスキルタイプの数
     const int DECKCARD_NUM = 20;                //デッキのカード枚数

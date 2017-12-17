@@ -282,6 +282,10 @@ public class StudySceneManager : MonoBehaviour {
         yield return StartCoroutine(u1.PushWait());
         objText.GetComponent<Text>().text = "逆に言えば、ターン中はこのフェイズの終了まではダメージが累積するってこと。";
         yield return StartCoroutine(u1.PushWait());
+        objText.GetComponent<Text>().text = "あと、＜常在能力＞を持つシュジンコウがいる場合は、戦闘フェイズの最初に常在能力フェイズが発生するよ。";
+        yield return StartCoroutine(u1.PushWait());
+        objText.GetComponent<Text>().text = "常在能力はシュジンコウがいる間は毎ターン発生するから、意外と効果が大きいね。";
+        yield return StartCoroutine(u1.PushWait());
         objImage.GetComponent<Image>().sprite = blackBoardImage[4];
         objText.GetComponent<Text>().text = "６．召喚フェイズ\nシュジンコウを召喚する「召喚呪文」のフェイズだよ。";
         yield return StartCoroutine(u1.PushWait());

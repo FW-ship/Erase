@@ -18,6 +18,9 @@ public class Scenario : MonoBehaviour {
     const int ITEM_NUM = 10;                                                //アイテムの数
     const int SCENARIO_NUM = 3;                                             //シナリオの数
 
+    private int packNum;                                              //選択したパック番号
+    private int coin;                                                 //現在の所持コイン数
+    private int coinForDraw;                                          //表示用の所持コイン数（増加エフェクト用）
     private int scenarioCount;                                        //現在のシナリオ位置
     private int maxScenarioCount;                                     //現在のシナリオ進行度
     private int timeCount;                                            //シーンが始まってからの時間
@@ -31,6 +34,8 @@ public class Scenario : MonoBehaviour {
     public GameObject objText;                                               //シナリオテキスト(カード獲得時のpushがあるのでpublic)
     private GameObject objSkipButton;                                        //スキップボタンオブジェクト
     private GameObject objFilm;                                              //回想演出のオブジェクト
+    private GameObject objCoin;                                              //コイン表示のオブジェクト
+    private GameObject objBookHolder;                                        //本（パック）選択ボタンのオブジェクト
     private GameObject objNowLoading;                                        //ナウローディング表示
     private GameObject objItem;                                              //シナリオ中のアイテム表示
     private GameObject objTextImage;                                         //テキスト表示欄の画像
@@ -97,7 +102,13 @@ public class Scenario : MonoBehaviour {
         maxScenarioCount = PlayerPrefs.GetInt("maxScenarioCount", 0);//シナリオをどこまで進めたかのロード
         //音響設定
         GetComponent<Utility>().SEAdd(gameObject);//効果音用のオーディオソースはシーン間引継ぎの必要がないのでシーンマネージャーに追加。
-
+        coin=PlayerPrefs.GetInt("coin", 0);
+        coinForDraw = coin;
+        objCoin= GameObject.Find("ButtonCoin").gameObject as GameObject;
+        objCoin.GetComponentInChildren<Text>().text ="Coin:" + coin.ToString();
+        objCoin.SetActive(false);
+        objBookHolder = GameObject.Find("BookHolder").gameObject as GameObject;
+        objBookHolder.SetActive(false);
         //シナリオコルーチンの実行
         StartCoroutine("ScenarioText" + scenarioCount.ToString());
     }
@@ -106,6 +117,8 @@ public class Scenario : MonoBehaviour {
     // Update is called once per frame
     void Update() {
         timeCount++;
+        if (coinForDraw<coin && timeCount%3==0) { coinForDraw++; objCoin.GetComponentInChildren<Text>().text = "Coin:" + coinForDraw.ToString(); }
+        if (coinForDraw > coin && timeCount % 3 == 0) { coinForDraw--; objCoin.GetComponentInChildren<Text>().text = "Coin:" + coinForDraw.ToString(); }
     }
 
     //シナリオ本編コルーチン(導入)
@@ -2001,6 +2014,113 @@ public class Scenario : MonoBehaviour {
         u1.StartCoroutine("LoadSceneCoroutine", nextScene);
     }
 
+    //
+    private IEnumerator ScenarioText100000()
+    {
+        objCoin.SetActive(true);
+        objBookHolder.SetActive(true);
+        objSkipButton.GetComponentInChildren<Text>().text="Back";
+        Utility u1 = GetComponent<Utility>();
+        //システム処理
+        nextScene = "SelectScene"; //次に行くシーン名  
+        bgm.Add(Resources.Load<AudioClip>("おもしろすぎてどっかん"));
+        u1.BGMPlay(bgm[0]);
+        objNowLoading.GetComponent<Image>().enabled = false;
+        StartCoroutine(ShichoMove(2));
+        yield return StartCoroutine(ScenarioDraw("【シチョウ】\n――ここでは、コインをパックと交換してあげるよ。\nOver（3枚以上）になったカードはコインに変換されるから、パズルが苦手でも、地道にやれば高難度ステージのカードが手に入るね。", 2, "", 0, false, 51, false, 0));
+        yield return StartCoroutine(u1.SelectWait());
+        //パックを選択させる。
+        yield return StartCoroutine("GetPack", packNum);//選択したパックを獲得。
+        //シーン選択パートへ
+        u1.StartCoroutine("LoadSceneCoroutine", nextScene);
+        yield return null;
+    }
+
+    public void PushPack(int num)
+    {
+        Utility u1 = GetComponent<Utility>();
+        if (num == 1)
+        {
+            if (coin>=10)
+            {
+                u1.SEPlay(gameObject, Resources.Load<AudioClip>("clearing1"));
+                objBookHolder.SetActive(false);
+                nextScene = "StoryScene"; //次に行くシーン名 
+                coin -= 10;
+                packNum = num;
+                u1.selectFlag = true;
+            }
+            else
+            {
+                StartCoroutine(ScenarioDraw("【シチョウ】\nコインが足りないね。アタシはまけてあげるほど優しくないよ？", 2, "", 0, false, 51, false, 0));
+            }
+        }
+        if (num == 2)
+        {
+            if (coin >= 10)
+            {
+                u1.SEPlay(gameObject, Resources.Load<AudioClip>("clearing1"));
+                objBookHolder.SetActive(false);
+                nextScene = "StoryScene"; //次に行くシーン名 
+                coin -= 10;
+                packNum = num;
+                u1.selectFlag = true;
+            }
+            else
+            {
+                StartCoroutine(ScenarioDraw("【シチョウ】\nコインが足りないね。アタシはまけてあげるほど優しくないよ？", 2, "", 0, false, 51, false, 0));
+            }
+        }
+        if (num == 3)
+        {
+            if (coin >= 10)
+            {
+                u1.SEPlay(gameObject, Resources.Load<AudioClip>("clearing1"));
+                objBookHolder.SetActive(false);
+                nextScene = "StoryScene"; //次に行くシーン名 
+                coin -= 10;
+                packNum = num;
+                u1.selectFlag = true;
+            }
+            else
+            {
+                StartCoroutine(ScenarioDraw("【シチョウ】\nコインが足りないね。アタシはまけてあげるほど優しくないよ？", 2, "", 0, false, 51, false, 0));
+            }
+        }
+        if (num == 4)
+        {
+            if (coin >= 20)
+            {
+                u1.SEPlay(gameObject, Resources.Load<AudioClip>("clearing1"));
+                objBookHolder.SetActive(false);
+                nextScene = "StoryScene"; //次に行くシーン名 
+                coin -= 20;
+                packNum = num;
+                u1.selectFlag = true;
+            }
+            else
+            {
+                StartCoroutine(ScenarioDraw("【シチョウ】\nコインが足りないね。アタシはまけてあげるほど優しくないよ？", 2, "", 0, false, 51, false, 0));
+            }
+        }
+        if (num == 5)
+        {
+            if (coin >= 20)
+            {
+                u1.SEPlay(gameObject, Resources.Load<AudioClip>("clearing1"));
+                objBookHolder.SetActive(false);
+                nextScene = "StoryScene"; //次に行くシーン名 
+                coin -= 20;
+                packNum = num;
+                u1.selectFlag = true;
+            }
+            else
+            {
+                StartCoroutine(ScenarioDraw("【シチョウ】\nコインが足りないね。アタシはまけてあげるほど優しくないよ？", 2, "", 0, false, 51, false, 0));
+            }
+        }
+    }
+
     //シナリオ画面の色を変える（暗いシーン等に使用）
     private void DrawColor(float red,float green,float blue)
     {
@@ -2186,8 +2306,10 @@ public class Scenario : MonoBehaviour {
         int[] getCardRarity = new int[GETCARD_NUM];//得られる3枚のレアリティ
         Sprite[] cardImage = new Sprite[GETCARD_FROM_NUM];
         bgm.Add(Resources.Load<AudioClip>("わくわくショッピング"));
+        objCoin.SetActive(true);
         u1.BGMPlay(bgm[0]);
         objNowLoading.GetComponent<Image>().enabled = false;
+        objSkipButton.SetActive(false);
         yield return StartCoroutine(ScenarioDraw("獲得ページ", 2, "",0,false,0,false,0));
         objGetCard[GETCARD_NUM].gameObject.SetActive(true);
         CardData c1 = GetComponent<CardData>();
@@ -2301,6 +2423,28 @@ public class Scenario : MonoBehaviour {
             for (j = i; i < RARE + j; i++) { packCard[i] = 51; packCardRarity[i] = RARE; }//R 
             for (j = i; i < RARE + j; i++) { packCard[i] = 52; packCardRarity[i] = RARE; }//R
         }
+        if (packNum == 5)//パック５（アリス）
+        {
+            //for文の使い方がトリッキーなので注意。カウント変数であるiを初期化せず、代わりにfor文脱出条件に関する変数jをiで初期化することで、連続して配列に代入できるようにしている。
+            i = 0;
+            for (j = i; i < COMMON + j; i++) { packCard[i] = 71; packCardRarity[i] = COMMON; }//C
+            for (j = i; i < COMMON + j; i++) { packCard[i] = 72; packCardRarity[i] = COMMON; }//C
+            for (j = i; i < COMMON + j; i++) { packCard[i] = 73; packCardRarity[i] = COMMON; }//C 
+            for (j = i; i < COMMON + j; i++) { packCard[i] = 74; packCardRarity[i] = COMMON; }//C 
+            for (j = i; i < COMMON + j; i++) { packCard[i] = 75; packCardRarity[i] = COMMON; }//C 
+            for (j = i; i < COMMON + j; i++) { packCard[i] = 76; packCardRarity[i] = COMMON; }//C 
+            for (j = i; i < COMMON + j; i++) { packCard[i] = 77; packCardRarity[i] = COMMON; }//C
+            for (j = i; i < UNCOMMON + j; i++) { packCard[i] = 10; packCardRarity[i] = UNCOMMON; }//UC  
+            for (j = i; i < UNCOMMON + j; i++) { packCard[i] = 66; packCardRarity[i] = UNCOMMON; }//UC 
+            for (j = i; i < UNCOMMON + j; i++) { packCard[i] = 68; packCardRarity[i] = UNCOMMON; }//UC 
+            for (j = i; i < UNCOMMON + j; i++) { packCard[i] = 69; packCardRarity[i] = UNCOMMON; }//UC                       
+            for (j = i; i < UNCOMMON + j; i++) { packCard[i] = 70; packCardRarity[i] = UNCOMMON; }//UC 
+            for (j = i; i < RARE + j; i++) { packCard[i] = 63; packCardRarity[i] = RARE; }//R 
+            for (j = i; i < RARE + j; i++) { packCard[i] = 64; packCardRarity[i] = RARE; }//R 
+            for (j = i; i < RARE + j; i++) { packCard[i] = 65; packCardRarity[i] = RARE; }//R
+            for (j = i; i < RARE + j; i++) { packCard[i] = 29; packCardRarity[i] = RARE; }//R 
+            for (j = i; i < RARE + j; i++) { packCard[i] = 67; packCardRarity[i] = RARE; }//R
+        }
 
         getCardText = "";//獲得カードテキストの初期化
         for (i = 0; i < GETCARD_NUM; i++)
@@ -2319,8 +2463,19 @@ public class Scenario : MonoBehaviour {
             //新しいカードならNew!表示、既に3枚持っているならOver表示
             if (c1.haveCard[getCard[i]] == 0) { getCardText += "　<color=red>New!</color>"; }
             if (c1.haveCard[getCard[i]] >= 3) { getCardText += "　<color=blue>Over...</color>"; }
+            if (c1.haveCard[getCard[i]] < 3)
+            {
+                c1.haveCard[getCard[i]]++;
+            }//獲得したカードについて手持ちが3枚以下なら所持カードに追加。
+            else
+            {
+                if (packCardRarity[choice] == RARE) { coin += 10; getCardText += "→<color=olive>+10 Coin</color>"; }
+                if (packCardRarity[choice] == UNCOMMON) { coin += 2; getCardText += "→<color=olive>+2 Coin</color>"; }
+                if (packCardRarity[choice] == COMMON) { coin++; getCardText += "→<color=olive>+1 Coin</color>"; }
+
+            }//手持ちが3枚以上ならコインに変換。
             getCardText += "\n";
-            if (c1.haveCard[getCard[i]] < 3) { c1.haveCard[getCard[i]]++; }//獲得したカードについて手持ちが3枚以下なら所持カードに追加。
+            PlayerPrefs.SetInt("coin", coin);
             PlayerPrefs.SetInt("haveCard" + getCard[i].ToString(), c1.haveCard[getCard[i]]);//セーブ
             if (getCard[i] == 15 && mainStory[1] == 0) { mainStory[1] = 1; PlayerPrefs.SetInt("mainStory1", 1); }//黒のカードを引いたらメインストーリーイベントのフラグをたてる。
             if (getCard[i] == 45 && mainStory[2] == 0) { mainStory[2] = 1; PlayerPrefs.SetInt("mainStory2", 1); }//黒のカードを引いたらメインストーリーイベントのフラグをたてる。
@@ -2331,6 +2486,9 @@ public class Scenario : MonoBehaviour {
         objText.GetComponent<Text>().text=getCardText;//テキストをオブジェクトに表示
         yield return StartCoroutine(u1.PushWait());
         objGetCard[GETCARD_NUM].gameObject.SetActive(false);
+        coinForDraw = coin;
+        objCoin.SetActive(false);
+        objSkipButton.SetActive(true);
         bgm.RemoveAt(0);//カード獲得画面のbgmは消しておく。（そのまま裏シナリオに入る場合があるのでややこしくなるのを避ける）
         yield return null;
     }
