@@ -49,7 +49,7 @@ public class TitleManager : MonoBehaviour
         if (GameObject.Find("MaskTextBack").GetComponent<Image>().enabled == false)//マスクボタンが起動中でなければ(起動中はmasktextbackがenabledになる。)
         {
             GameObject.Find("MaskTextBack").GetComponent<Image>().enabled = true;
-            GameObject.Find("MaskText").GetComponent<Text>().text = "<color=black><size=36>If you want to see the another end, write 'Choice the mask' in your review.\nIt's helpful to get 'ver2.0'.\n（もしも物語のもう一つの結末を見たいと思って頂けたならば、\nレビューの末尾に「マスクを拾う」と書いてください。\nレビュー欄の状況に応じ、シナリオ等が追加される可能性があります）</size></color>";
+            GameObject.Find("MaskText").GetComponent<Text>().text = "<color=black><size=36>If you want to see the another end, write 'Choice the mask' in your review.\nIt's helpful to get 'ver2.0'.\n（もしも気に入って頂けたなら、レビューを書いていただけると幸いです。ver2.0制作の原動力になるかもしれません。）</size></color>";
             StartCoroutine(GetComponent<Utility>().GoToURL("https://play.google.com/store/apps/details?id=com.brainmixer.UQnecromance",2.0f));
         }
         else

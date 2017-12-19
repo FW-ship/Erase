@@ -1772,7 +1772,7 @@ public class Scenario : MonoBehaviour {
         CardData c1 = GetComponent<CardData>();
         c1.deckCard[1, 0] = 13;
         c1.deckCard[1, 1] = 6;
-        c1.deckCard[1, 2] = 14;
+        c1.deckCard[1, 2] = 74;
         c1.deckCard[1, 3] = 27;
         c1.deckCard[1, 4] = 41;
         c1.deckCard[1, 5] = 56;

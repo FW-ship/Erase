@@ -402,6 +402,10 @@ public class PuzzleSceneManager : MonoBehaviour
                             followerImage[i] = Resources.Load<Sprite>("follower" + i.ToString());
                         }//召喚呪文ならフォロワー画像も
                     }
+                    if (library[l, j, 0, 0] == 73 && cardImage[19] == null)//速読を呼び出すカードなら、速読カードも読み込む
+                    {
+                        cardImage[19] = Resources.Load<Sprite>("card19");
+                    }
                 }
             }
         }
@@ -2284,9 +2288,10 @@ public class PuzzleSceneManager : MonoBehaviour
 
         if (player == 0) { objCutIn[player].GetComponentInChildren<Text>().text += "<color=red>"; }
         if (player == 1) { objCutIn[player].GetComponentInChildren<Text>().text += "<color=blue>"; }
-
+        objCutIn[player].GetComponentInChildren<Text>().text += "<size=36>";
         objCutIn[player].GetComponentInChildren<Text>().text += name;
-        objCutIn[player].GetComponentInChildren<Text>().text += "\n<size=24>";
+        objCutIn[player].GetComponentInChildren<Text>().text += "</size>";
+        objCutIn[player].GetComponentInChildren<Text>().text += "\n<size=16>";
         objCutIn[player].GetComponentInChildren<Text>().text += explain;
         objCutIn[player].GetComponentInChildren<Text>().text += "</size>";
         objCutIn[player].GetComponentInChildren<Text>().text += "</color>";

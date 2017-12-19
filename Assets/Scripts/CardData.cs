@@ -1122,6 +1122,7 @@ public class CardData : MonoBehaviour {
             {
                 LibraryPut(player,p1.handCard[player,i],p1);
                 p1.useCard[player, i] = true;
+                for (int j = 0; j < SKILL_TYPE; j++) { p1.cardSkill[player, i, j] = 0; }//非表示のカードは効果を発揮しない。
                 p1.objCard[player, i].GetComponent<Image>().enabled = false;//戻したので非表示
             }
         }
@@ -1133,6 +1134,7 @@ public class CardData : MonoBehaviour {
         int i;
         if (p1.library[player, 0, 0, 0] == 0)//ライブラリが一杯でない時のみ
         {
+            p1.libraryNum[player]++;
             CardList();
             p1.library[player, 0, 0, 0] = card;
             //今あるカードの上に持って行く
@@ -1195,8 +1197,8 @@ public class CardData : MonoBehaviour {
         {
             name = "＜アリス＞空想癖";
             explain = "お互いのライブラリをリセットする。（手札や場の状況には影響しない）";
-            p1.LibraryMake(0);
-            p1.LibraryMake(1);
+            StartCoroutine(p1.LibraryMake(0));
+            StartCoroutine(p1.LibraryMake(1));
         }
         if (p1.followerStatus[player, 2] == 65)
         {
@@ -1225,14 +1227,14 @@ public class CardData : MonoBehaviour {
         }
         if (p1.followerStatus[player, 2] == 69)
         {
-            name = "＜眠りネズミ＞だらけた空気";
+            name = "＜眠りネズミ＞怠惰";
             explain = "対戦相手のシュジンコウのATを-1する。";
             if (player == 0) { p1.followerStatus[1, 0]--; }
             if (player == 1) { p1.followerStatus[0, 0]--; }
         }
         if (p1.followerStatus[player, 2] == 70)
         {
-            name = "＜代用ウミガメ＞ウミガメのスープ";
+            name = "＜代用ウミガメ＞悲しみ";
             explain = "対戦相手に１点のダメージを与える。";
             p1.seAudioSource[1].PlayOneShot(p1.se[1]);
             if (player == 0) { StartCoroutine(p1.Damage(1, 1)); StartCoroutine(p1.LifeDamage(1)); }
@@ -1240,7 +1242,7 @@ public class CardData : MonoBehaviour {
         }
         if (p1.followerStatus[player, 2] == 71)
         {
-            name = "＜クラブのトランプ＞数の暴力";
+            name = "＜クラブ＞数の暴力";
             explain = "対戦相手に１点のダメージを与える。";
             p1.seAudioSource[1].PlayOneShot(p1.se[1]);
             if (player == 0) { StartCoroutine(p1.Damage(1, 1)); StartCoroutine(p1.LifeDamage(1)); }
@@ -1248,19 +1250,19 @@ public class CardData : MonoBehaviour {
         }
         if (p1.followerStatus[player, 2] == 72)
         {
-            name = "＜ハートのトランプ＞盗み食い";
+            name = "＜ハート＞盗み食い";
             explain = "自身は１点のライフを回復する。";
             p1.lifePoint[player]++;
         }
         if (p1.followerStatus[player, 2] == 73)
         {
-            name = "＜スペードのトランプ＞庭いじり";
+            name = "＜スペード＞庭いじり";
             explain = "自身のライブラリの枚数が20枚未満ならば、その一番上に「速読」のカードを置く。";
             LibraryPut(player, 19, p1);
         }
         if (p1.followerStatus[player, 2] == 74)
         {
-            name = "＜ダイヤのトランプ＞横領";
+            name = "＜ダイヤ＞横領";
             explain = "対戦相手のライブラリを上から１枚捨てる。";
             if (player == 0) { LibraryBreak(1, 1); }
             if (player == 1) { LibraryBreak(0, 1); }
