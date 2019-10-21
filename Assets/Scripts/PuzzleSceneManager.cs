@@ -531,11 +531,20 @@ public class PuzzleSceneManager : MonoBehaviour
         activeType = 0; beforeActiveType = 0;
     }
 
-
+    //PC用キー入力
+    private void PCInput()
+    {
+        if (Input.GetKey(KeyCode.Z)) { key+=INPUT_B; }
+        if (Input.GetKey(KeyCode.X)) { key+=INPUT_A; }
+        if (Input.GetKey(KeyCode.DownArrow)) { downButtonFlag = true; } else { downButtonFlag = false; }
+        if (Input.GetKey(KeyCode.RightArrow)) { rightButtonFlag = true; } else { rightButtonFlag = false; }
+        if (Input.GetKey(KeyCode.LeftArrow)) { leftButtonFlag = true; } else { leftButtonFlag = false; }
+    }
 
     // キー入力処理
     private void KeyInput()
     {
+        PCInput();
         // キー入力を得る
         if (downButtonFlag == true) { key += INPUT_DOWN; }
         if (rightButtonFlag == true) { key += INPUT_RIGHT; }
