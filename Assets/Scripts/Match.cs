@@ -16,7 +16,6 @@ public class Match : Photon.MonoBehaviour {
     private int[] enemyHand = new int[HAND_NUM];
     private int enemyLibraryNum;
     private int wait;
-    private bool libraryOutFlag;
     public PhotonView m_photonView;
 
     void OnPhotonSerializeView(PhotonStream i_stream, PhotonMessageInfo i_info)
@@ -36,14 +35,13 @@ public class Match : Photon.MonoBehaviour {
                 enemyCardMana1[j] = p1.cardMana[0, 1, j];
                 enemyCardMana2[j] = p1.cardMana[0, 2, j];
             }
-        libraryOutFlag = p1.libraryOutFlag[0];
         enemyLibraryNum = p1.libraryNum[0];
         for (int i = 0; i < HAND_NUM; i++)
         {
             enemyHand[i] = p1.handCard[0,i];
         }
         wait = p1.waitCount[0];
-        m_photonView.RPC("ChangeDataInput", PhotonTargets.Others, wait,enemyLibrary,enemyCardMana0, enemyCardMana1, enemyCardMana2, enemyLibraryNum,enemyHand,libraryOutFlag);
+        m_photonView.RPC("ChangeDataInput", PhotonTargets.Others, wait,enemyLibrary,enemyCardMana0, enemyCardMana1, enemyCardMana2, enemyLibraryNum,enemyHand);
     }
 
     public void MatchEnd()
@@ -103,9 +101,6 @@ public class Match : Photon.MonoBehaviour {
                 p1.cardSkill[1, i, k] = c1.cardSkill[enemyHand[i], k];//カードの効果を代入
             }
         }
-
-        libraryOutFlag = data5;
-        p1.libraryOutFlag[1] = libraryOutFlag;
     }
 }
 //新パック（オーバー分がパック資金になるシステムの導入）。★次回：一時強化カード＆システム実装

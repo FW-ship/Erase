@@ -6,7 +6,7 @@ using UnityEngine.UI;
 public class CardData : MonoBehaviour {
 
     const int CARD_ALL = 100;                     //カードの全種類数
-    const int BLOCKTYPE_NUM = 5;                 //ブロックの色の種類数
+    const int BLOCKTYPE_NUM = 4;                 //ブロックの色の種類数
     const int SKILL_TYPE = 4;                    //カードのスキルタイプの数
     const int DECKCARD_NUM = 20;                 //デッキのカード枚数
     const int HAND_NUM = 3;                      //手札の枚数
@@ -208,14 +208,14 @@ public class CardData : MonoBehaviour {
         i = 7;
         cardName[i] = "水晶の剣";
         cardExplain[i] = "<color=olive>水晶の剣</color>\nコスト：黄4　　　　<b><color=black>Ｃ</color></b>\n自身のシュジンコウのATを+1する。\n\n<i>見せかけだけの武器。</i>";
-        cardCost[i, 5] = 5;
+        cardCost[i, 4] = 5;
         cardSkill[i, 1] = OWN;
         followerStatus[i, 0] = 1;
 
         i = 8;
         cardName[i] = "水晶の盾";
         cardExplain[i] = "<color=olive>水晶の盾</color>\nコスト黄8　　　　<b><color=black>Ｃ</color></b>\n自身のシュジンコウのDFを+1する。\n\n<i>おとぎ話にリアリティはいらない。</i>";
-        cardCost[i, 5] = 10;
+        cardCost[i, 4] = 10;
         cardSkill[i, 1] = OWN;
         followerStatus[i, 1] = 1;
 
@@ -237,14 +237,14 @@ public class CardData : MonoBehaviour {
         i = 11;
         cardName[i] = "黒曜石の剣";
         cardExplain[i] = "<color=olive>黒曜石の剣</color>\nコスト：黄10　　　　<b><color=#a06000ff>ＵＣ</color></b>\n自身のシュジンコウのATを+2する。\n\n<i>切れ味鋭いファンタジー世界の剣。</i>";
-        cardCost[i, 5] = 10;
+        cardCost[i, 4] = 10;
         cardSkill[i, 1] = OWN;
         followerStatus[i, 0] = 2;
 
         i = 12;
         cardName[i] = "黒曜石の盾";
         cardExplain[i] = "<color=olive>黒曜石の盾</color>\nコスト黄20　　　　<b><color=#a06000ff>ＵＣ</color></b>\n自身のシュジンコウのDFを+2する。\n\n<i>おとぎ話の中での戦いは華やかでわくわくする。</i>";
-        cardCost[i, 5] = 20;
+        cardCost[i, 4] = 20;
         cardSkill[i, 1] = OWN;
         followerStatus[i, 1] = 2;
 
@@ -296,7 +296,7 @@ public class CardData : MonoBehaviour {
         cardName[i] = "過ち";
         cardExplain[i] = "<color=#666666ff>過ち</color>\nコスト：黒30黄10　　　　<b><color=#ff5000ff>Ｒ</color></b>\n対戦相手のシュジンコウのDFを-5する。\n\n<i>知らないうちに手元にあった１ページ。</i>";
         cardCost[i, 4] = 30;
-        cardCost[i, 5] = 10;
+        cardCost[i, 4] = 10;
         cardSkill[i, 1] = YOURS;
         followerStatus[i, 1] = -5;
 
@@ -397,14 +397,14 @@ public class CardData : MonoBehaviour {
         i = 30;
         cardName[i] = "十四年式拳銃";
         cardExplain[i] = "<color=olive>十四年式拳銃</color>\nコスト：黄80　　　　<b><color=#a06000ff>ＵＣ</color></b>\n自身のシュジンコウのATを+5する。\n\n<i>人の命を奪う武器。</i>";
-        cardCost[i, 5] = 80;
+        cardCost[i, 4] = 80;
         cardSkill[i, 1] = OWN;
         followerStatus[i, 0] = 5;
 
         i = 31;
         cardName[i] = "ボディアーマー";
         cardExplain[i] = "<color=olive>ボディアーマー</color>\nコスト黄100　　　　<b><color=#a06000ff>ＵＣ</color></b>\n自身のシュジンコウのDFを+5する。\n\n<i>現実の世界は、ただただ悲しい。</i>";
-        cardCost[i, 5] = 100;
+        cardCost[i, 4] = 100;
         cardSkill[i, 1] = OWN;
         followerStatus[i, 1] = 5;
 
@@ -427,7 +427,7 @@ public class CardData : MonoBehaviour {
         cardName[i] = "転進";
         cardExplain[i] = "<color=#666666ff>転進</color>\nコスト：黒10黄10　　　　<b><color=black>Ｃ</color></b>\n対戦相手のシュジンコウのDFを-1する。\n\n<i>英語で言うラウト。</i>";
         cardCost[i, 4] = 10;
-        cardCost[i, 5] = 10;
+        cardCost[i, 4] = 10;
         cardSkill[i, 1] = YOURS;
         followerStatus[i, 1] = -1;
 
@@ -435,7 +435,7 @@ public class CardData : MonoBehaviour {
         cardName[i] = "謀略";
         cardExplain[i] = "<color=#666666ff>謀略</color>\nコスト：黒20黄10　　　　<b><color=#a06000ff>ＵＣ</color></b>\n対戦相手のシュジンコウのDFを-3する。\n\n<i>恰好良い戦いなんてない。</i>";
         cardCost[i, 4] = 20;
-        cardCost[i, 5] = 10;
+        cardCost[i, 4] = 10;
         cardSkill[i, 1] = YOURS;
         followerStatus[i, 1] = -3;
 
@@ -501,7 +501,7 @@ public class CardData : MonoBehaviour {
         cardName[i] = "組員";
         cardExplain[i] = "<color=green>組員</color>\nコスト：緑20黄10　　　　<b><color=#a06000ff>ＵＣ</color></b>\nAT2/DF1\n\n<i>なぜ赤ずきんの物語にヤクザが出て来るのか。</i>";
         cardCost[i, 3] = 20;
-        cardCost[i, 5] = 10;
+        cardCost[i, 4] = 10;
         cardSkill[i, 0] = SUMMON;
         followerStatus[i, 0] = 2;
         followerStatus[i, 1] = 1;
@@ -546,7 +546,7 @@ public class CardData : MonoBehaviour {
         cardExplain[i] = "<color=blue>強化阻害</color>\nコスト：青10黒10黄10　　　　<b><color=#a06000ff>ＵＣ</color></b>\nこのターンの強化呪文フェイズを飛ばす（使用されるはずだった呪文はそのまま捨てられる）。この呪文は特殊呪文として扱う。\n\n<i>武器を捨てた先に見えるもの。</i>";
         cardCost[i, 2] = 10;
         cardCost[i, 4] = 10;
-        cardCost[i, 5] = 10;
+        cardCost[i, 4] = 10;
         cardSkill[i, 2] = OTHER;
         cardSkill2Use[i] = new CardSkill2Delegate(Card48Skill2);
 
@@ -555,7 +555,7 @@ public class CardData : MonoBehaviour {
         cardExplain[i] = "<color=blue>戦闘阻害</color>\nコスト：緑4黒4黄4　　　　<b><color=#a06000ff>ＵＣ</color></b>\nこのターンの常在能力フェイズと戦闘フェイズを飛ばす。この呪文は特殊呪文として扱う。\n\n<i>動けなくても時間は進む。</i>";
         cardCost[i, 3] = 4;
         cardCost[i, 4] = 4;
-        cardCost[i, 5] = 4;
+        cardCost[i, 4] = 4;
         cardSkill[i, 2] = OTHER;
         cardSkill2Use[i] = new CardSkill2Delegate(Card49Skill2);
 
@@ -589,7 +589,7 @@ public class CardData : MonoBehaviour {
         cardCost[i, 2] = 20;
         cardCost[i, 3] = 20;
         cardCost[i, 4] = 20;
-        cardCost[i, 5] = 20;
+        cardCost[i, 4] = 20;
         cardSkill[i, 0] = SUMMON;
         cardSkill[i, 2] = OTHER;
         followerStatus[i, 0] = 0;
@@ -601,7 +601,7 @@ public class CardData : MonoBehaviour {
         cardExplain[i] = "<color=blue>破り捨て</color>\nコスト：青10黒20黄10　　　　<b><color=black>Ｃ</color></b>\nあなたと対戦相手は使用状態にない呪文を全て捨てる。この呪文は特殊呪文として扱う。\n\n<i>痛み分けで十分。</i>";
         cardCost[i, 2] = 10;
         cardCost[i, 4] = 20;
-        cardCost[i, 5] = 10;
+        cardCost[i, 4] = 10;
         cardSkill[i, 2] = HAND_CHANGE;
         cardSkill2Use[i] = new CardSkill2Delegate(Card54Skill2);
 
@@ -619,7 +619,7 @@ public class CardData : MonoBehaviour {
         cardExplain[i] = "<color=green>市長</color>\nコスト：緑40黒30黄20　　　　<b><color=black>Ｃ</color></b>\nAT3/DF3\n\n<i>偉そうにするのが仕事。</i>";
         cardCost[i, 3] = 40;
         cardCost[i, 4] = 30;
-        cardCost[i, 5] = 20;
+        cardCost[i, 4] = 20;
         cardSkill[i, 0] = SUMMON;
         followerStatus[i, 0] = 3;
         followerStatus[i, 1] = 3;
@@ -700,7 +700,7 @@ public class CardData : MonoBehaviour {
         cardExplain[i] = "<color=green>ハートの女王</color>\nコスト：緑20赤20黄40　　　　<b><color=#a06000ff>Ｒ</color></b>\nAT2/DF3\n＜常在能力＞このシュジンコウのATを+1する。\n\n<i>癇癪持ちの女王様。</i>";
         cardCost[i, 1] = 20;
         cardCost[i, 3] = 20;
-        cardCost[i, 5] = 40;
+        cardCost[i, 4] = 40;
         cardSkill[i, 0] = SUMMON;
         followerStatus[i, 0] = 2;
         followerStatus[i, 1] = 3;
@@ -710,7 +710,7 @@ public class CardData : MonoBehaviour {
         cardName[i] = "三月ウサギ";
         cardExplain[i] = "<color=green>三月ウサギ</color>\nコスト：緑10黄30　　　　<b><color=#a06000ff>ＵＣ</color></b>\nAT0/DF1\n＜常在能力＞このシュジンコウのDFを+1する。\n\n<i>狂った世界と狂った感性、本当に狂っているのは誰だろう。</i>";
         cardCost[i, 3] = 10;
-        cardCost[i, 5] = 30;
+        cardCost[i, 4] = 30;
         cardSkill[i, 0] = SUMMON;
         followerStatus[i, 0] = 0;
         followerStatus[i, 1] = 1;
@@ -720,7 +720,7 @@ public class CardData : MonoBehaviour {
         cardName[i] = "白ウサギ";
         cardExplain[i] = "<color=green>白ウサギ</color>\nコスト：緑4黄4　　　　<b><color=#a06000ff>Ｒ</color></b>\nAT1/DF6\n＜常在能力＞このシュジンコウのDFを-1する。\n\n<i>夢の世界に飛び込むきっかけ。</i>";
         cardCost[i, 3] = 4;
-        cardCost[i, 5] = 4;
+        cardCost[i, 4] = 4;
         cardSkill[i, 0] = SUMMON;
         followerStatus[i, 0] = 1;
         followerStatus[i, 1] = 6;
@@ -740,7 +740,7 @@ public class CardData : MonoBehaviour {
         cardName[i] = "眠りネズミ";
         cardExplain[i] = "<color=green>眠りネズミ</color>\nコスト：緑10黄20　　　　<b><color=#a06000ff>ＵＣ</color></b>\nAT0/DF1\n＜常在能力＞対戦相手のシュジンコウのATを-1する。\n\n<i>ティーポットの中で冬眠中。</i>";
         cardCost[i, 3] = 10;
-        cardCost[i, 5] = 30;
+        cardCost[i, 4] = 30;
         cardSkill[i, 0] = SUMMON;
         followerStatus[i, 0] = 0;
         followerStatus[i, 1] = 1;
@@ -770,7 +770,7 @@ public class CardData : MonoBehaviour {
         cardName[i] = "ハートのトランプ";
         cardExplain[i] = "<color=green>ハートのトランプ</color>\nコスト：緑10黄10　　　　<b><color=black>Ｃ</color></b>\nAT1/DF1\n＜常在能力＞自身は１点のライフを回復する。\n\n<i>間の抜けたトランプの貴族。</i>";
         cardCost[i, 3] = 10;
-        cardCost[i, 5] = 10;
+        cardCost[i, 4] = 10;
         cardSkill[i, 0] = SUMMON;
         followerStatus[i, 0] = 1;
         followerStatus[i, 1] = 1;
@@ -780,7 +780,7 @@ public class CardData : MonoBehaviour {
         cardName[i] = "スペードのトランプ";
         cardExplain[i] = "<color=green>スペードのトランプ</color>\nコスト：緑20黒20　　　　<b><color=black>Ｃ</color></b>\nAT0/DF1\n＜常在能力＞自身のライブラリの枚数が20枚未満ならば、その一番上に「速読」のカードを置く。\n\n<i>手際の悪いトランプの庭師。</i>";
         cardCost[i, 3] = 20;
-        cardCost[i, 5] = 20;
+        cardCost[i, 4] = 20;
         cardSkill[i, 0] = SUMMON;
         followerStatus[i, 0] = 0;
         followerStatus[i, 1] = 1;
@@ -807,7 +807,7 @@ public class CardData : MonoBehaviour {
         i = 76;
         cardName[i] = "不思議なケーキ";
         cardExplain[i] = "<color=olive>不思議なケーキ</color>\nコスト：黄10　　　　<b><color=black>Ｃ</color></b>\n自身のシュジンコウのATとDFを+1する。\n\n<i>大きいことはいいことだ。</i>";
-        cardCost[i, 5] = 10;
+        cardCost[i, 4] = 10;
         cardSkill[i, 1] = OWN;
         followerStatus[i, 0] = 1;
         followerStatus[i, 1] = 1;
@@ -1032,15 +1032,12 @@ public class CardData : MonoBehaviour {
                 bufferFollowerStatus[i]=p1.followerStatus[1, i];
                 p1.followerStatus[1, i] = p1.followerStatus[0, i];
             }
-            bufferFollowerForDraw=p1.handFollowerForDraw[1];
-            p1.handFollowerForDraw[1] = p1.handFollowerForDraw[0];
             //相手の（バッファに逃がしておいたもの）を自分へ
             p1.handFollower[0] = bufferFollower;
             for (int i = 0; i < 3; i++)
             {
                 p1.followerStatus[0, i] = bufferFollowerStatus[i];
             }
-            p1.handFollowerForDraw[0] = bufferFollowerForDraw;
         }
     }
 
@@ -1062,7 +1059,7 @@ public class CardData : MonoBehaviour {
         PuzzleSceneManager p1 = GetComponent<PuzzleSceneManager>();
         for (i = 0; i < HAND_NUM; i++)
         {
-            for (j = 1; j < BLOCKTYPE_NUM + 1; j++)
+            for (j = 0; j < BLOCKTYPE_NUM + 1; j++)
             {
                 if (p1.cardMana[player, i, j] >= p1.cardCost[player, i, j])//マナが足りて居たら
                 {
@@ -1151,7 +1148,7 @@ public class CardData : MonoBehaviour {
                     break;
                 }
             }
-            for (int j = 1; j < BLOCKTYPE_NUM + 1; j++)
+            for (int j = 0; j < BLOCKTYPE_NUM + 1; j++)
             {
                 p1.library[player, i, 1, j] = cardCost[p1.library[player, i, 0, 0], j];
             }//カードのコスト
