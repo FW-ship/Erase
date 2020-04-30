@@ -12,8 +12,7 @@ public class PuzzleSceneManager : MonoBehaviour
     //ブロックの変数内数字について※10進法の各位に意味を持たせて処理している。
     //１の位（ブロックの色）
     //赤(Red)=1　青(Blue)=2　緑(Green)=3　黄(Yellow)=4
-    //１０の位（ブロックが宙に浮いているか否か）　※このシステムはブロック落下中も関係なく消去判定を行うので区別は必須。落ちている途中のブロックが隣り合ったからといって消えてはいけない
-    //着地している（消去判定の対象となる）=0　　浮いている（消去判定の対象とならない）=1　　固定された（フィールドブロックに代入された）ばかりのアクティブブロック=2(固定されたばかりを2として独立させる理由は一瞬でも0にすると浮いていても消去判定の対象になってしまうこと、1にするとアクティブブロック固定の際に着地判定まで発生してしまうので不要な着地演出が行われてしまう)
+    //１０の位（ブロックが宙に浮いているか否か。）　
 
     //定数の宣言
     const int MAXPLAYERLIFE = 20;                //プレイヤーの最大lifepoint
@@ -38,10 +37,10 @@ public class PuzzleSceneManager : MonoBehaviour
     const int ENEMY_FOLLOWER_POSITION_Y = -160;    //敵側シュジンコウの基本位置Y座標
     const int MANA_POSITION_X = -485;            //ブロック消去演出でマナが集まる位置X座標
     const int MANA_POSITION_Y = -160;             //ブロック消去演出でマナが集まる位置Y座標
-    const int PLAYER_LIFE_POSITION_X = -540;     //プレイヤー側ＬＰ表示のX座標
-    const int PLAYER_LIFE_POSITION_Y = 60;       //プレイヤー側ＬＰ表示のY座標
-    const int ENEMY_LIFE_POSITION_X = 540;       //敵側ＬＰ表示のX座標
-    const int ENEMY_LIFE_POSITION_Y = 60;        //敵側ＬＰ表示のY座標
+    const int PLAYER_LIFE_POSITION_X = -480;     //プレイヤー側ＬＰ表示のX座標
+    const int PLAYER_LIFE_POSITION_Y = 100;       //プレイヤー側ＬＰ表示のY座標
+    const int ENEMY_LIFE_POSITION_X = 480;       //敵側ＬＰ表示のX座標
+    const int ENEMY_LIFE_POSITION_Y = 100;        //敵側ＬＰ表示のY座標
     const int PLAYER_SPELL_POSITION_X = -390;    //プレイヤー側詠唱演出の基本位置X座標
     const int PLAYER_SPELL_POSITION_Y = -70;      //プレイヤー側詠唱演出の基本位置Y座標
     const int ENEMY_SPELL_POSITION_X = 390;      //敵側詠唱演出の基本位置X座標
@@ -59,11 +58,11 @@ public class PuzzleSceneManager : MonoBehaviour
     const int OTHER = 10000;                     //第２種呪文において、スキル種別（その他）を表す。
     const int OWN = 1;                           //第１種呪文においてスキル種別（対象：自身のシュジンコウ）を現す。
     const int YOURS = 2;                         //第１種呪文においてスキル種別（対象：相手のシュジンコウ）を現す。
-    const int PACE_BLOCK_MOVE = 10;              //フィールドブロックの落下ペース
+    const int PACE_BLOCK_MOVE = 40;              //フィールドブロックの落下ペース
 
     //変数の宣言
      private int chainCountForDraw;          //チェイン演出用連鎖数（連鎖数リセット後も最後の連鎖の連鎖数はしばらく表示する必要があるため）（-1はブレイク状態を表す）
-    private int blockMoveTime;              //フィールドブロックの落下時間カウント。一定周期で落下。
+    private int[,] blockMoveTime=new int[WORLD_WIDTH, WORLD_HEIGHT];              //フィールドブロックの落下時間カウント。一定周期で落下。
     private int chainEffectTime;            //chainの演出時間管理変数。
     private bool winloseFlag;               //勝ち負けが決まったか否か
     private bool cutInRunning;              //カットインが動いているか否か
@@ -72,8 +71,9 @@ public class PuzzleSceneManager : MonoBehaviour
     private int timeCount;
     private bool turnEndButtonPush;
     private bool turnProcess;
-    
+
     public int chainCount;                                                     //連鎖数
+    private int[,] brokenblock = new int[WORLD_WIDTH, WORLD_HEIGHT];            //消去演出中か否か、演出中なら何コマ目(+2)か。
     public bool[] phaseSkipFlag = new bool[5];                                 //フェイズを飛ばすかどうかのフラグ
     public bool[,] useCard = new bool[2, HAND_NUM];                            //手札のカードが使われたか否か。trueなら使用されたということでターン終了時に新たなカードに変える（カードを引く）。
     public int[] waitCount = new int[2];                                       //通信待機をここまで何回行ったか
@@ -102,7 +102,7 @@ public class PuzzleSceneManager : MonoBehaviour
     private GameObject objField;                                                             //フィールドオブジェクト
     private GameObject objBlockField;                                                        //ブロックを置く部分
     private Sprite[] blockImage = new Sprite[20];                                            //blockImageは各色のブロックの画像。（[]内は色と状態※block配列に入った数字と同じ）
-    public Sprite[] mana = new Sprite[5];
+    public Sprite[] mana = new Sprite[20];
     private GameObject[] objLifeDamage = new GameObject[2];                                  //第三種（攻撃）呪文演出のオブジェクト
     private GameObject[] objFollower = new GameObject[2];                                    //シュジンコウのゲームオブジェクトを代入する配列
     private GameObject[] objLibrary = new GameObject[2];                                     //ライブラリのゲームオブジェクトを代入する配列
@@ -115,7 +115,8 @@ public class PuzzleSceneManager : MonoBehaviour
     private GameObject[,,] objCardMana = new GameObject[2, HAND_NUM, 6];     //カードの残り必要マナ表示
 
     public GameObject[,] objCard = new GameObject[2, HAND_NUM];                             //objCardは手札のカードのゲームオブジェクト（描画されるブロック）を代入する配列。
-
+    public Sprite[] brokenBlockSprite=new Sprite[20];
+    public GameObject objTurnEndButton;
 
     public List<AudioSource> seAudioSource = new List<AudioSource>();                      //効果音のオーディオソース（音程変更等で効果音ごとに触るので各効果音ごとに取得）
     public List<AudioClip> se = new List<AudioClip>();                                     //効果音のオーディオクリップ
@@ -157,7 +158,7 @@ public class PuzzleSceneManager : MonoBehaviour
         }
     }
 
-    private void DeleteBlock()//★
+    private void DeleteBlock()
     {
         for (int i = 0; i < WORLD_WIDTH; i++)
         {
@@ -165,13 +166,21 @@ public class PuzzleSceneManager : MonoBehaviour
             {
                 if (deleteBlock[i, j] == true)
                 {
+                    brokenblock[i, j] = 1;
+                    objFieldBlock[i, j].GetComponent<Image>().sprite = null;//unity不具合回避
+                    objFieldBlock[i, j].GetComponent<Image>().sprite = brokenBlockSprite[0];
+                    if (block[i, j] == 1) { objFieldBlock[i, j].GetComponent<Image>().color = new Color(1, 0, 0); }
+                    if (block[i, j] == 2) { objFieldBlock[i, j].GetComponent<Image>().color = new Color(0, 0, 1); }
+                    if (block[i, j] == 3) { objFieldBlock[i, j].GetComponent<Image>().color = new Color(0, 1, 0); }
+                    if (block[i, j] == 4) { objFieldBlock[i, j].GetComponent<Image>().color = new Color(1, 1, 0); }
                     block[i, j] = 0;
-                    for (int k = j - 1; k >= 0; k--) { if (block[i, k] != 0) { block[i, k] = block[i, k] % 10 + 10; } }
+                    seAudioSource[2].PlayOneShot(se[2]);
+                    for (int k = j - 1; k >= 0; k--) { if (block[i, k] != 0) { if (block[i,k]<10) { blockMoveTime[i, k] = 0; } block[i, k] = block[i, k] % 10 + 10; } }
+                    objTurnEndButton.SetActive(false);
                 }
                 deleteBlock[i,j] = false;
             }
         }
-
     }
 
     //開始処理のコルーチン
@@ -273,10 +282,16 @@ public class PuzzleSceneManager : MonoBehaviour
         blockImage[2] = Resources.Load<Sprite>("blockblue");
         blockImage[3] = Resources.Load<Sprite>("blockgreen");
         blockImage[4] = Resources.Load<Sprite>("blockyellow");
-        blockImage[11] = Resources.Load<Sprite>("blockredfloat");
-        blockImage[12] = Resources.Load<Sprite>("blockbluefloat");
-        blockImage[13] = Resources.Load<Sprite>("blockgreenfloat");
-        blockImage[14] = Resources.Load<Sprite>("blockyellowfloat");
+        blockImage[11] = Resources.Load<Sprite>("blockred");
+        blockImage[12] = Resources.Load<Sprite>("blockblue");
+        blockImage[13] = Resources.Load<Sprite>("blockgreen");
+        blockImage[14] = Resources.Load<Sprite>("blockyellow");
+
+        for (i = 0; i < 20; i++)
+        {
+            if (i < 10) { brokenBlockSprite[i] = Resources.Load<Sprite>("broken_000" + i.ToString()); }
+            else { brokenBlockSprite[i] = Resources.Load<Sprite>("broken_00" + i.ToString()); }
+        }
 
         //マナ画像の読み込み
         mana[0]= Resources.Load<Sprite>("mana0");
@@ -284,6 +299,11 @@ public class PuzzleSceneManager : MonoBehaviour
         mana[2] = Resources.Load<Sprite>("mana2");
         mana[3] = Resources.Load<Sprite>("mana3");
         mana[4] = Resources.Load<Sprite>("mana4");
+        mana[11] = Resources.Load<Sprite>("mana11");
+        mana[12] = Resources.Load<Sprite>("mana12");
+        mana[13] = Resources.Load<Sprite>("mana13");
+        mana[14] = Resources.Load<Sprite>("mana14");
+        mana[15] = Resources.Load<Sprite>("mana15");
 
         //効果音読み込み
         for (i = 0; i < SOUND_NUM; i++)
@@ -294,9 +314,9 @@ public class PuzzleSceneManager : MonoBehaviour
         {
             seAudioSource[i].volume = PlayerPrefs.GetFloat("SEVolume", 0.8f);
         }
-        se.Add(Resources.Load<AudioClip>("kako"));
+        se.Add(Resources.Load<AudioClip>("stone-break1"));
         se.Add(Resources.Load<AudioClip>("fire"));
-        se.Add(Resources.Load<AudioClip>("eliminat"));
+        se.Add(Resources.Load<AudioClip>("glass-crack1"));
         se.Add(Resources.Load<AudioClip>("move"));
         se.Add(Resources.Load<AudioClip>("roll"));
         se.Add(Resources.Load<AudioClip>("up"));
@@ -354,7 +374,11 @@ public class PuzzleSceneManager : MonoBehaviour
                 }
             }
         }
-        
+
+        objFollower[0].GetComponent<Image>().sprite = null;//unity不具合回避
+        objFollower[1].GetComponent<Image>().sprite = null;//unity不具合回避
+        objFollower[0].GetComponent<Image>().sprite= Resources.Load<Sprite>("character50");
+        objFollower[1].GetComponent<Image>().sprite = Resources.Load<Sprite>("follower14");
 
         //ゲームの初期化
         InitGame();
@@ -369,8 +393,7 @@ public class PuzzleSceneManager : MonoBehaviour
         lifePoint[0] = MAXPLAYERLIFE;
         lifePoint[1] = MAXENEMYLIFE;
         chainCount = 0;
-        blockMoveTime = 0;
-        chainEffectTime = 30;//0~29はチェイン演出に使う。通常状態は30以上。
+        chainEffectTime = 90;//0~89はチェイン演出に使う。通常状態は90以上。
         timeCount = 0;
         winloseFlag = false;
         turnEndButtonPush = false;
@@ -400,7 +423,7 @@ public class PuzzleSceneManager : MonoBehaviour
         {
             for (i = 0; i < HAND_NUM; i++)
             {
-                for (j = 1; j < BLOCKTYPE_NUM + 1; j++) { cardMana[k, i, j] = 0; }//貯めたマナのリセット
+                for (j = 0; j < BLOCKTYPE_NUM + 1; j++) { cardMana[k, i, j] = 0; }//貯めたマナのリセット
             }
         }
         //相手のマナ獲得能力の代入。
@@ -427,6 +450,7 @@ public class PuzzleSceneManager : MonoBehaviour
             for (j = 0; j < WORLD_WIDTH; j++)
             {
                 block[j, i] = 0;
+                blockMoveTime[i, j] = 0;
             }
         }
         //手札を３枚引く
@@ -454,6 +478,7 @@ public class PuzzleSceneManager : MonoBehaviour
             for (int j = 0; j < WORLD_WIDTH; j++)
             {
                 if (block[j,i]==0) { block[j, i] = Random.Range(1, BLOCKTYPE_NUM + 1); while(CheckEliminatBlock(true)){ block[j, i] = Random.Range(1, BLOCKTYPE_NUM + 1); } }
+                blockMoveTime[i, j]=0;
             }
         }
     }
@@ -463,13 +488,9 @@ public class PuzzleSceneManager : MonoBehaviour
     private void TimeFunc()
     {
         int i, j, k, l;
-        if (blockMoveTime % PACE_BLOCK_MOVE == 0)
-        {
-            MoveBlock();
-        }
+        MoveBlock();
 
 
-        blockMoveTime++;
         chainEffectTime++;
 
         if (turnEndButtonPush && turnProcess==false)
@@ -562,7 +583,6 @@ public class PuzzleSceneManager : MonoBehaviour
                 seAudioSource[2].pitch *= 1.122462f;//ピッチを１音階上げる。
             }
             if (chainCountForDraw == 1) { seAudioSource[2].pitch = 1.0f; }//連鎖数が１なら基本ピッチに戻す（ピッチの初期化）。（ピッチを上げるコードの前に書くと、１連鎖目からピッチが上がってしまう。それは動作として望ましくないのでこの位置）
-            seAudioSource[2].PlayOneShot(se[2]);
         }//一つでも消えていればchainCountを増やす。
 
         //カードにマナを補充。
@@ -572,10 +592,6 @@ public class PuzzleSceneManager : MonoBehaviour
         }
 
         for (i = 0; i < BLOCKTYPE_NUM + 1; i++) { playerEliminatBlockCount[i] = 0; }
-
-
-        ChainCheck();
-
         if (eliminatFlag == 0) { return false; }//消えてなかったら０を返す
         return true;//一つでも消えていたら１を返す
     }
@@ -610,26 +626,6 @@ public class PuzzleSceneManager : MonoBehaviour
         // ３つ以上つながっていたらここで終了
         if (BlockNum >= 3) return 1;
 
-        /*
-
-        // 左上から右下にかけて繋がっている数を調べる
-        for (i = 0; y + i >= 0 && x + i >= 0 && Block[x + i,y + i] == CheckBlock; i--) { }
-        i++;
-        for (BlockNum = 0; x + i < WORLD_WIDTH && y + i < WORLD_HEIGHT && Block[x + i,y + i] == CheckBlock; BlockNum++, i++) { }
-
-        // ３つ以上つながっていたらここで終了
-        if (BlockNum >= 3) return 1;
-
-
-        // 右上から左下にかけて繋がっている数を調べる
-        for (i = 0; y + i >= 0 && x - i < WORLD_WIDTH && Block[x - i,y + i] == CheckBlock; i--) { }
-        i++;
-        for (BlockNum = 0; x - i >= 0 && y + i < WORLD_HEIGHT && Block[x - i,y + i] == CheckBlock; BlockNum++, i++) { }
-
-        // ３つ以上つながっていたらここで終了
-        if (BlockNum >= 3) return 1;
-
-        */
 
         // ここまで来ていたら消えない
         return 0;
@@ -655,115 +651,80 @@ public class PuzzleSceneManager : MonoBehaviour
     private void MoveBlock()
     {
         int newY, j, i;
-        int lockBlock = 0;//ブロックが固定されたか否か
+        int floatBlock=0;//浮いているブロック
+        int lockBlock = 0;//固定されたブロック
 
-        for (i = WORLD_HEIGHT - 1; i > -1; i--)
+            for (i = WORLD_HEIGHT - 1; i > -1; i--)
         {
             for (j = 0; j < WORLD_WIDTH; j++)
             {
-                if (block[j, i] > 9)//ブロックが10以上の（つまり浮いている）時
-                {
-                    // 移動後の座標をセットする
-                    newY = i + 1;
-                        if (newY >= WORLD_HEIGHT)//ブロックがフィールド下端に達しているか調べる
+                    if (block[j, i] > 9)//ブロックが10以上の（つまり浮いている）時
+                    {
+                    blockMoveTime[j, i]++;
+                    floatBlock++;
+                    if (blockMoveTime[j, i] % PACE_BLOCK_MOVE == 0)
+                    {
+                        // 移動後の座標をセットする
+                        newY = i + 1;
+                        if (newY >= WORLD_HEIGHT)//移動後のブロックがフィールド下端に達しているか調べる
                         {
-                            block[j, i] = block[j, i] % 10;
-                            lockBlock = 1;
+                            block[j, newY] = block[j, i] % 10;
+                            block[j, i] = 0;
+                            blockMoveTime[j, i] = 0;
+                            lockBlock++;
                         }
                         else
                         {
-                            // 移動後のブロックが画面上のブロックに当たっていないか調べる
+                            // 移動後のブロックが画面上のブロックとかぶらないか調べる
                             if (block[j, newY] != 0)
                             {
-                                // あたっていたらブロックを固定する
-                                block[j, i] = block[j, i] % 10;
-                                lockBlock = 1;
+                                if (block[j, newY] > 10) {
+                                //浮いてるブロックとかぶる時は、移動させずにblockMoveTimeを相手に合わせる
+                                blockMoveTime[j, i] = blockMoveTime[j, newY];
+                                }
+                                else
+                                {
+                                    // あたっていたらブロックを固定する
+                                    block[j, newY] = block[j, i] % 10;
+                                    block[j, i] = 0;
+                                    blockMoveTime[j, i] = 0;
+                                    lockBlock++;
+                                }
                             }
                             else
                             {// あたっていなければ座標を移動する
                                 block[j, newY] = block[j, i];
+                                blockMoveTime[j, newY] = 0;
                                 block[j, i] = 0;
+                                blockMoveTime[j, i] = 0;
+                                //移動後に動く余地がなければ即座に固定。
+                                if (newY + 1 >= WORLD_HEIGHT)//移動後のブロックがフィールド下端に達しているか調べる
+                                {
+                                    block[j, newY] = block[j, newY] % 10;
+                                    lockBlock++;
+                                }
+                                else
+                                {
+                                    // 移動後のブロックが画面上の固定ブロックに接していないか調べる
+                                    if (block[j, newY + 1] != 0 && block[j, newY + 1] < 10)
+                                    {
+                                        // あたっていたらブロックを固定する
+                                        block[j, newY] = block[j, newY] % 10;
+                                        lockBlock++;
+                                    }
+                                }
+
                             }
                         }
+                    }
                 };
             };
         }
-        if (lockBlock == 1) { CheckEliminatBlock(false); seAudioSource[0].PlayOneShot(se[0]); };//一つでも新たにブロックを固定したならば、ブロックが消えるかチェック。
+        if (lockBlock > 0) { seAudioSource[0].PlayOneShot(se[0]); };
+        if (lockBlock == floatBlock) {   if (!CheckEliminatBlock(false)) { chainCount = 0;objTurnEndButton.SetActive(true);  }}
         // 終了
         return;
     }
-
-
-
-    //連鎖時のブロック状態変更、連鎖判定。
-    private void ChainCheck()
-    {
-        int i;
-        int j;
-        int k;
-        bool chainend=true;
-        InitBufferBlock();
-        // 空きを詰める
-        for (i = WORLD_HEIGHT - 1; i > -1; i--)
-        {
-            for (j = 0; j < WORLD_WIDTH; j++)
-            {
-                if (block[j, i] != 0)
-                {
-                    for (k = i + 1; (k < WORLD_HEIGHT) && (block[j, k] == 0 || block[j, k] > 9 || deleteBlock[j,k]==true) && bufferBlock[j, k] == 0; k++) {; }//ブロックが落ちた時に固定される高さを探査
-                    k--;
-
-                    if (k != i && deleteBlock[j, k] == false)//ブロックに落ちる余地がある場合
-                    {
-                        bufferBlock[j, k] = block[j, i];//落ちた場合に固定される場所のバッファに代入。
-                        if (block[j, i] > 9) { bufferBlock[j, k] = block[j, i] % 10; }//落ち切った想定でのシミュレーションなので、バッファからは浮きフラグ(+10)を消去
-                        chainend = false;
-                    }
-                    else
-                    {
-                        if (block[j, i] > 9) { bufferBlock[j, i] = block[j, i] % 10; }//ブロックがフラグ的には浮いているが位置は下端に達しているなら、バッファからは浮きor固定されたばかりフラグを消去してその位置にそのまま代入。
-                    }
-                }
-            }
-        }
-
-        if (chainend == true)
-        {
-            chainCount = 0;
-        }//連鎖カウントのリセットを判定
-    }
-
-
-    //ブロック落下後消去予測(要は落下後のシミュレーションの状態にして(block配列の代わりにbufferBlock配列を使用して)回すCheckEliminatBlock関数もどき)
-    private int FallCheckEliminatBlock()
-    {
-        int i, j; // 汎用変数 
-
-        // 各ブロックが消えるか調べる
-        for (i = 1; i < WORLD_HEIGHT; i++)
-        {
-            for (j = 0; j < WORLD_WIDTH; j++)
-            {
-                if ((block[j, i] == 0 || block[j, i] > 9) && bufferBlock[j, i] == 0) continue;//落下後（bufferBlock）も現在（block）もブロックがないなら飛ばして次へ。
-                // ブロックが消えるかどうか調べて調査結果をバッファに保存する
-                bufferBlock[j, i] = CheckEliminatBlockToOne(j, i,bufferBlock) * 100;//消えるならBufferBlockに100を足す。
-            }
-        }
-
-        // 消えると判断されたブロックを確認
-        for (i = 0; i < WORLD_HEIGHT; i++)
-        {
-            for (j = 0; j < WORLD_WIDTH; j++)
-            {
-                if (bufferBlock[j, i] > 99)
-                {
-                    return 1;//消えるブロックが一つでもあるなら1を返す	
-                }
-            }
-        }
-        return 0;//なければ0を返す
-    }
-
 
 
 
@@ -774,7 +735,6 @@ public class PuzzleSceneManager : MonoBehaviour
     {
         int i, j, k, l,m,manacalc,manacalccount,nowmanacalc;
         float enoughdark,enoughbright;
-
         //★フィールドブロックの描画★
         //block[i,j]が０ならimage[i,j]を非表示にする
         for (i = 0; i < WORLD_WIDTH; i++)
@@ -783,13 +743,29 @@ public class PuzzleSceneManager : MonoBehaviour
             {
                 if (block[i, j] == 0)
                 {
-                    objFieldBlock[i, j].GetComponent<Image>().enabled = false;
+                    if (brokenblock[i,j]>0)
+                    {
+                        brokenblock[i, j]++;
+                        if (brokenblock[i, j] < 22) { objFieldBlock[i, j].GetComponent<Image>().sprite = null;//unity不具合回避
+                            objFieldBlock[i, j].GetComponent<Image>().sprite = brokenBlockSprite[brokenblock[i, j] - 2]; }
+                        else{
+                            objFieldBlock[i, j].GetComponent<Image>().enabled = false; brokenblock[i, j] = 0;
+                        }
+                    }
+                    else
+                    {
+                        objFieldBlock[i, j].GetComponent<Image>().enabled = false;
+                    }
                 }
                 else
                 {//block[i,j]が０でないなら（0の時にこの代入をするとblockImage[0]が未定義なのでおかしくなる）
                  //block[i,j]が０でないならimage[i,j]を表示する
                     objFieldBlock[i, j].GetComponent<Image>().enabled = true;
-                        objFieldBlock[i, j].GetComponent<Image>().sprite = blockImage[block[i, j]];//20以下のブロックについてはそのまま描画。              
+                    objFieldBlock[i, j].GetComponent<Image>().sprite = null;//unity不具合回避
+                    objFieldBlock[i, j].GetComponent<Image>().sprite = blockImage[block[i, j]];
+                    objFieldBlock[i, j].GetComponent<Image>().color = new Color(1, 1, 1);
+                    if (block[i,j]>10) { objFieldBlock[i, j].GetComponent<RectTransform>().localPosition= new Vector3(130*i-260, 260-130*j-(blockMoveTime[i,j]%PACE_BLOCK_MOVE)*BLOCK_SIZE/PACE_BLOCK_MOVE, 0); }
+                    else { objFieldBlock[i, j].GetComponent<RectTransform>().localPosition = new Vector3(130 * i - 260, 260-130 * j, 0); }
                 }
             }
         }
@@ -806,15 +782,25 @@ public class PuzzleSceneManager : MonoBehaviour
 
         //★ステータスの描画★
         //連鎖数表示
-        if (chainCountForDraw != 0 && chainEffectTime < 30)
+        if (chainCountForDraw != 0 && chainEffectTime < 90)
         {
-            objChainCount.GetComponent<Text>().enabled = true;
-            objChainCount.GetComponent<Text>().text = chainCountForDraw.ToString() + "Chain";
+
+            objChainCount.GetComponent<Image>().enabled = true;
+            objChainCount.GetComponent<Image>().sprite = null;
+            if (chainCountForDraw==1) { objChainCount.GetComponent<Image>().sprite = mana[11]; }
+            if (chainCountForDraw == 2) { objChainCount.GetComponent<Image>().sprite = mana[12]; }
+            if (chainCountForDraw == 3) { objChainCount.GetComponent<Image>().sprite = mana[13]; }
+            if (chainCountForDraw == 4) { objChainCount.GetComponent<Image>().sprite = mana[14]; }
+            if (chainCountForDraw >= 5) { objChainCount.GetComponent<Image>().sprite = mana[15]; }
+            objChainCount.GetComponent<Image>().color = new Color(0.95f,0.95f,0.95f,0.5f);
+            objChainCount.GetComponentInChildren<Text>().enabled = true;
+            objChainCount.GetComponentInChildren<Text>().text = "<color=red>" + chainCountForDraw.ToString() + "</color>" + "Chain";
             objChainCount.GetComponent<RectTransform>().localPosition = new Vector3(chainEffectTime, 0, 0);
         }
         else
         {
-            objChainCount.GetComponent<Text>().enabled = false;
+            objChainCount.GetComponentInChildren<Text>().enabled = false;
+            objChainCount.GetComponent<Image>().enabled = false;
         }
         //ＬＰ表示
         if (lifePoint[0] >= 15) { objLifePoint[0].GetComponent<Text>().text = "LP: <color=blue>" + lifePoint[0].ToString() + "</color>"; }
@@ -843,8 +829,8 @@ public class PuzzleSceneManager : MonoBehaviour
                             if (manacalc - (int)Mathf.Pow(3, manacalccount) >= 0)
                             {
                                 manacalc -= (int)Mathf.Pow(3, manacalccount);
-                                if (nowmanacalc - (int)Mathf.Pow(3, manacalccount) >= 0) { nowmanacalc -= (int)Mathf.Pow(3, manacalccount); enoughdark = 0;enoughbright = Mathf.Sin((float)timeCount/10)*0.3f; } else { enoughbright = 0; enoughdark = 0.67f; }
-                                if (k == 0) { objCardMana[i, j, m].GetComponent<Image>().color = new Color(0.7f-enoughdark+enoughbright,0.7f-enoughdark + enoughbright, 0.7f-enoughdark + enoughbright, 1); }
+                                if (nowmanacalc - (int)Mathf.Pow(3, manacalccount) >= 0) { nowmanacalc -= (int)Mathf.Pow(3, manacalccount); enoughdark = 0;enoughbright = Mathf.Sin((float)timeCount/10)*0.7f; } else { enoughbright = 0; enoughdark = 0.68f; }
+                                if (k == 0) { objCardMana[i, j, m].GetComponent<Image>().color = new Color(0.7f-enoughdark+enoughbright/3,0.7f-enoughdark + enoughbright/3, 0.7f-enoughdark + enoughbright/3, 1); }
                                 if (k == 1) { objCardMana[i, j, m].GetComponent<Image>().color = new Color(1.0f-enoughdark, enoughbright, enoughbright, 1); }
                                 if (k == 2) { objCardMana[i, j, m].GetComponent<Image>().color = new Color(enoughbright, enoughbright, 1.0f-enoughdark, 1); }
                                 if (k == 3) { objCardMana[i, j, m].GetComponent<Image>().color = new Color(enoughbright, 1.0f-enoughdark, enoughbright, 1); }
@@ -971,6 +957,7 @@ public class PuzzleSceneManager : MonoBehaviour
     {
         int m = 0;
         int manacalc,nowmanacalc,manacalccount;
+        objCard[i, j].GetComponent<Image>().sprite = null;//unity不具合回避
         objCard[i, j].GetComponent<Image>().sprite = cardImage[handCard[i, j]];
         for (int k = 0; k < 6; k++) { objCardMana[i, j, k].SetActive(false); }
         for (int k = 0; k < BLOCKTYPE_NUM + 1; k++)
@@ -982,6 +969,7 @@ public class PuzzleSceneManager : MonoBehaviour
                 if (manacalc - (int)Mathf.Pow(3, manacalccount) >= 0)
                 {
                     objCardMana[i, j, m].SetActive(true);
+                    objCardMana[i, j, m].GetComponent<Image>().sprite = null;//unity不具合回避
                     objCardMana[i, j, m].GetComponent<Image>().sprite = mana[manacalccount];
                     manacalc -= (int)Mathf.Pow(3, manacalccount);
                     
@@ -1291,7 +1279,7 @@ public class PuzzleSceneManager : MonoBehaviour
                 if (objCard[l, i].GetComponent<Image>().enabled == false)
                 {
                     DrawCard(l, i);
-                    for (j = 1; j < BLOCKTYPE_NUM + 1; j++) { cardMana[l, i, j] = 0; }//カードに貯まったマナはリセット
+                    for (j = 0; j < BLOCKTYPE_NUM + 1; j++) { cardMana[l, i, j] = 0; }//カードに貯まったマナはリセット
                     useCard[l, i] = false;//新たに引いたので、使っていない状態になおす。
                     objCard[l, i].GetComponent<Image>().enabled = true;//引き直したので、非表示になっていたカードを表示しなおす。
                 }
@@ -1621,12 +1609,19 @@ public class PuzzleSceneManager : MonoBehaviour
     public IEnumerator EliminatBlockEffect(int x, int y, int color)
     {
         int i;
-        //消えたブロックが何点のマナになったかテキスト表示(この時点ではchainCount増加はまだなので+1しておく)
-        if (color == 1) { objEliminatBlock[x, y].GetComponent<Text>().text = "<color=red>" + (chainCount + 1).ToString() + "</color>"; }//color==1(赤)
-        if (color == 2) { objEliminatBlock[x, y].GetComponent<Text>().text = "<color=blue>" + (chainCount + 1).ToString() + "</color>"; }//color==2(青)
-        if (color == 3) { objEliminatBlock[x, y].GetComponent<Text>().text = "<color=green>" + (chainCount + 1).ToString() + "</color>"; }//color==3(緑)
-        if (color == 4) { objEliminatBlock[x, y].GetComponent<Text>().text = "<color=black>" + (chainCount + 1).ToString() + "</color>"; }//color==4(黒)
-        if (color == 5) { objEliminatBlock[x, y].GetComponent<Text>().text = "<color=yellow>" + (chainCount + 1).ToString() + "</color>"; }//color==5(黄)
+        objEliminatBlock[x, y].GetComponent<Image>().enabled = true;
+        objEliminatBlock[x, y].GetComponent<Image>().sprite = null;
+        //消えたブロックが何点のマナになったか表示(この時点ではchainCount増加はまだなので+1しておく)
+        if (chainCount == 0) { objEliminatBlock[x, y].GetComponent<Image>().sprite = mana[0]; }
+        if (chainCount == 1) { objEliminatBlock[x, y].GetComponent<Image>().sprite = mana[1]; }
+        if (chainCount == 2) { objEliminatBlock[x, y].GetComponent<Image>().sprite = mana[2]; }
+        if (chainCount == 3) { objEliminatBlock[x, y].GetComponent<Image>().sprite = mana[3]; }
+        if (chainCount >= 4) { objEliminatBlock[x, y].GetComponent<Image>().sprite = mana[4]; }//4以上の時は過多過ぎて全部埋まるので4で統一でＯＫ
+
+        if (color == 1) { objEliminatBlock[x, y].GetComponent<Image>().color = new Color(1,0,0); }//color==1
+        if (color == 2) { objEliminatBlock[x, y].GetComponent<Image>().color = new Color(0, 0, 1); }//color==2
+        if (color == 3) { objEliminatBlock[x, y].GetComponent<Image>().color = new Color(0, 1, 0); }//color==3
+        if (color == 4) { objEliminatBlock[x, y].GetComponent<Image>().color = new Color(1, 1, 0); }//color==4
 
         for (i = 0; i < 30; i++)
         {//消去演出オブジェクトをプレイヤー表示へと集める
@@ -1635,7 +1630,7 @@ public class PuzzleSceneManager : MonoBehaviour
         }
 
         //消去演出オブジェクトを消す。
-        objEliminatBlock[x, y].GetComponent<Text>().text = "";
+        objEliminatBlock[x, y].GetComponent<Image>().enabled = false;
     }
 
 
@@ -1698,10 +1693,7 @@ public class PuzzleSceneManager : MonoBehaviour
 
     public void BlockPush(int x)
     {
-        if (chainCount==0)//★同時消しも考慮した方がいいかも？
-        {
             deleteBlock[x / 10, x % 10] = true;
-        }
     }
 
     public void CardPush(int x)
