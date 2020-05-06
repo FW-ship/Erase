@@ -2,6 +2,7 @@
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
+[DefaultExecutionOrder(1)]//dragはManagerに依存するのでstartを後処理させる。
 public class Drag : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
     const int DECKCARD_NUM = 20;
@@ -9,22 +10,24 @@ public class Drag : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHand
     private RectTransform r;
     public static int dragNum=0;
     public GameObject refObj;
-    public GameObject objSelectCardText;                             //objSelectCardTextは手持ちカードのゲームオブジェクトを代入する配列。
-    public GameObject objSelectCardImage;                       //同上（Image）
+    public GameObject objSelectCardExplain;
+    public GameObject objBackImage;
     public GameObject[] objDeckCard=new GameObject[DECKCARD_NUM];
-    
+    private bool nothave = false;
+
     void Start()
     {
         int i;
         refObj = GameObject.Find("MakeBookSceneManager");
+        objSelectCardExplain= refObj.GetComponent<MakeBookSceneManager>().objSelectCardExplain;
+        objBackImage= refObj.GetComponent<MakeBookSceneManager>().objBackImage;
         r = GetComponent<RectTransform>();
-        objSelectCardText = GameObject.Find("explaintext").gameObject as GameObject;
-        objSelectCardImage = GameObject.Find("explainimage").gameObject as GameObject;
         for (i = 0; i < DECKCARD_NUM; i++)
         {
             objDeckCard[i] = GameObject.Find("deckcard" + i.ToString()).gameObject as GameObject;
         }
         startR = r.localPosition;
+        objSelectCardExplain.SetActive(false);
     }
 
     public void OnBeginDrag(PointerEventData e)
@@ -33,36 +36,52 @@ public class Drag : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHand
         MakeBookSceneManager m1 = refObj.GetComponent<MakeBookSceneManager>();
         i = int.Parse(name.Substring(4))+m1.cardPage;//card~~のオブジェクト名から先頭４文字（card)を抜いて数値に型変更。それにcardPageを足す。
         dragNum = i;
-        objSelectCardText.GetComponent<Text>().enabled = true;
-        objSelectCardImage.GetComponent<Image>().enabled = true;
         CardData c1 = refObj.GetComponent<CardData>();
         c1.CardList();
-        if (c1.haveCard[dragNum] > 0)
+        if (m1.cardRest[dragNum] >0)
         {
-            objSelectCardText.GetComponent<Text>().text = c1.cardExplain[dragNum];
+            nothave = false;
+            objSelectCardExplain.SetActive(true);
+            objSelectCardExplain.GetComponentInChildren<Text>().text = c1.cardExplain[dragNum];
         }
         else
         {
-            objSelectCardText.GetComponent<Text>().text = "<size=48>未所持のため詳細不明</size>";
+            nothave = true;
+            return;
         }
         for (i = 0; i < DECKCARD_NUM; i++)
         {
             objDeckCard[i].GetComponent<Image>().color = new Color(1.0f, 1.0f, 1.0f, 0.3f);
         }
+        transform.SetParent(objSelectCardExplain.transform);
     }
 
     public void OnDrag(PointerEventData e)
     {
+        if (nothave) { return; }
+        if (r.position.y >= 430) { transform.SetParent(objBackImage.transform); } else { transform.SetParent(objSelectCardExplain.transform); }
+        //ドラッグしてるモノとかぶったカードはα値０。
+        for (int i = 0; i < DECKCARD_NUM; i++)
+        {
+            if (e.position.y > objDeckCard[i].GetComponent<RectTransform>().localPosition.y + 390 - 60 &&
+                e.position.y < objDeckCard[i].GetComponent<RectTransform>().localPosition.y +390 + 60 &&
+                e.position.x > objDeckCard[i].GetComponent<RectTransform>().localPosition.x + 640 - 45 &&
+                e.position.x < objDeckCard[i].GetComponent<RectTransform>().localPosition.x +640 + 45)
+            { objDeckCard[i].GetComponent<Image>().color = new Color(1.0f, 1.0f, 1.0f, 0); } else { objDeckCard[i].GetComponent<Image>().color = new Color(1.0f, 1.0f, 1.0f, 1.0f); }
+        }
+
+
         r.position = e.position;
     }
 
     public void OnEndDrag(PointerEventData e)
     {
+        if (nothave) { return; }
         int i;
+        transform.SetParent(refObj.GetComponent<MakeBookSceneManager>().objCards.transform);
         r.localPosition = startR;
         dragNum = 0;
-        objSelectCardText.GetComponent<Text>().enabled = false;
-        objSelectCardImage.GetComponent<Image>().enabled = false;
+        objSelectCardExplain.SetActive(false);
         for (i = 0; i < DECKCARD_NUM; i++)
         {
             objDeckCard[i].GetComponent<Image>().color = new Color(1.0f,1.0f,1.0f,1.0f);

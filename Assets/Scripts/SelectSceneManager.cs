@@ -72,7 +72,7 @@ public class SelectSceneManager : MonoBehaviour {
 
     public void PushBlueBookButton()
     {
-        PlayerPrefs.SetInt("scenarioCount", 1);
+        PlayerPrefs.SetString("ScenarioName", "テスト用文章");
         GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "StoryScene");
     }
 

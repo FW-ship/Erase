@@ -696,6 +696,8 @@ public class PuzzleSceneManager : MonoBehaviour
                                 block[j, newY] = block[j, i];
                                 blockMoveTime[j, newY] = 0;
                                 block[j, i] = 0;
+                                deleteBlock[j, newY] = deleteBlock[j,i];//★追加
+                                deleteBlock[j, i] = false;//★追加
                                 blockMoveTime[j, i] = 0;
                                 //移動後に動く余地がなければ即座に固定。
                                 if (newY + 1 >= WORLD_HEIGHT)//移動後のブロックがフィールド下端に達しているか調べる

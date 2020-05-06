@@ -42,21 +42,21 @@ public class CardData : MonoBehaviour {
         }
         if (PlayerPrefs.GetInt("haveCard1", 0) == 0)//初期状態なら
         {
-            haveCard[1] = 2;
+            haveCard[1] = 3;
             haveCard[2] = 1;
-            haveCard[3] = 1;
-            haveCard[4] = 1;
-            haveCard[5] = 2;
-            haveCard[7] = 1;
-            haveCard[8] = 1;
-            haveCard[9] = 2;
-            haveCard[10] = 2;
-            haveCard[16] = 1;
-            haveCard[17] = 1;
+            haveCard[3] = 2;
+            haveCard[4] = 2;
+            haveCard[5] = 3;
+            haveCard[7] = 2;
+            haveCard[8] = 2;
+            haveCard[9] = 3;
+            haveCard[10] = 3;
+            haveCard[16] = 2;
+            haveCard[17] = 2;
             haveCard[18] = 1;
-            haveCard[19] = 1;
-            haveCard[20] = 1;
-            haveCard[21] = 2;
+            haveCard[19] = 2;
+            haveCard[20] = 2;
+            haveCard[21] = 3;
             for (i = 1; i < CARD_ALL + 1; i++)
             {
                 PlayerPrefs.SetInt("haveCard" + i.ToString(), haveCard[i]);
@@ -146,7 +146,7 @@ public class CardData : MonoBehaviour {
         {
             deckCard[1, i] = PlayerPrefs.GetInt("enemyDeckCard" + i.ToString(), 1);
         }
-        for (i = 1; i < BLOCKTYPE_NUM + 1; i++)
+        for (i = 0; i < BLOCKTYPE_NUM + 1; i++)
         {
             enemyGetManaPace[i] = PlayerPrefs.GetInt("enemyGetManaPace" + i.ToString(), 100);
         }
@@ -1017,7 +1017,6 @@ public class CardData : MonoBehaviour {
     {
         int bufferFollower;
         int[] bufferFollowerStatus=new int[3];
-        int bufferFollowerForDraw;
 
         PuzzleSceneManager p1 = GetComponent<PuzzleSceneManager>();
         p1.seAudioSource[14].PlayOneShot(p1.se[14]);

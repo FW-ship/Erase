@@ -21,19 +21,17 @@ public class CardPush : MonoBehaviour {
     {
         int i;
         Drag d1 = refObj.GetComponent<Drag>();
-        d1.objSelectCardText.GetComponent<Text>().enabled = true;
-        d1.objSelectCardImage.GetComponent<Image>().enabled = true;
+        d1.objSelectCardExplain.SetActive(true);
         CardData c1 = refObj2.GetComponent<CardData>();
         c1.CardList();
         i = c1.deckCard[0,int.Parse(name.Substring(8))];
-        d1.objSelectCardText.GetComponent<Text>().text = c1.cardExplain[i];
+        d1.objSelectCardExplain.GetComponentInChildren<Text>().text = c1.cardExplain[i];
     }
 
     public void LeaveCard()
     {
         Drag d1 = refObj.GetComponent<Drag>();
-        d1.objSelectCardText.GetComponent<Text>().enabled = false;
-        d1.objSelectCardImage.GetComponent<Image>().enabled = false;
+        d1.objSelectCardExplain.SetActive(false);
     }
 
 

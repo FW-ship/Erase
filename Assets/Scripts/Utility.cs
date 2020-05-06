@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 
-[DefaultExecutionOrder(-1)]//utilityは他から引用されるのでstartを先行処理させる。
+[DefaultExecutionOrder(-10)]//utilityは他から引用されるのでstartを先行処理させる。
 public class Utility : MonoBehaviour {
     private GameObject objBGM;                                  //BGMのオブジェクト
     private bool fadeFlag;                                      //フェードイン・フェードアウト中か否か
