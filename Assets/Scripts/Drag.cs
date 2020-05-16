@@ -14,6 +14,8 @@ public class Drag : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHand
     public GameObject objBackImage;
     public GameObject[] objDeckCard=new GameObject[DECKCARD_NUM];
     private bool nothave = false;
+    MakeBookSceneManager m1;
+    CardData c1;
 
     void Start()
     {
@@ -27,22 +29,22 @@ public class Drag : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHand
             objDeckCard[i] = GameObject.Find("deckcard" + i.ToString()).gameObject as GameObject;
         }
         startR = r.localPosition;
+        m1 = refObj.GetComponent<MakeBookSceneManager>();
+        c1 = refObj.GetComponent<CardData>();
         objSelectCardExplain.SetActive(false);
     }
 
     public void OnBeginDrag(PointerEventData e)
     {
         int i;
-        MakeBookSceneManager m1 = refObj.GetComponent<MakeBookSceneManager>();
+        
         i = int.Parse(name.Substring(4))+m1.cardPage;//card~~のオブジェクト名から先頭４文字（card)を抜いて数値に型変更。それにcardPageを足す。
         dragNum = i;
-        CardData c1 = refObj.GetComponent<CardData>();
-        c1.CardList();
-        if (m1.cardRest[dragNum] >0)
+        if (c1.card[dragNum].cardRest >0)
         {
             nothave = false;
             objSelectCardExplain.SetActive(true);
-            objSelectCardExplain.GetComponentInChildren<Text>().text = c1.cardExplain[dragNum];
+            objSelectCardExplain.GetComponentInChildren<Text>().text = c1.card[dragNum].cardExplain;
         }
         else
         {
@@ -78,7 +80,7 @@ public class Drag : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHand
     {
         if (nothave) { return; }
         int i;
-        transform.SetParent(refObj.GetComponent<MakeBookSceneManager>().objCards.transform);
+        transform.SetParent(m1.objCards.transform);
         r.localPosition = startR;
         dragNum = 0;
         objSelectCardExplain.SetActive(false);

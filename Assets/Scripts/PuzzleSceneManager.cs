@@ -25,8 +25,8 @@ public class PuzzleSceneManager : MonoBehaviour
     const int FIELD_TOP = 315;                   //フィールドの上端（ピクセル）
     const int DECKCARD_NUM = 20;                 //デッキの枚数
     const int HAND_NUM = 3;                      //手札の枚数
-    const int SKILL_TYPE = 4;                    //カードのスキルタイプの数
-    const int CARD_ALL = 100;                    //カードの全種類数
+    const int SKILL_TYPE = 2;                    //カードのスキルタイプの数
+    const int CARD_ALL = 27;                    //カードの全種類数
     const int SOUND_NUM = 16;                    //効果音の種類数
     const int SPELL_TIME = 60;                   //呪文カットインの演出時間（フレーム）
     const int ATTACK_TIME = 60;                  //シュジンコウの攻撃演出時間（フレーム）
@@ -72,27 +72,20 @@ public class PuzzleSceneManager : MonoBehaviour
     private bool turnEndButtonPush;
     private bool turnProcess;
 
+    public bool[] libraryOutFlag = new bool[2];                                //ライブラリアウトが発生したかの判定
     public int chainCount;                                                     //連鎖数
     private int[,] brokenblock = new int[WORLD_WIDTH, WORLD_HEIGHT];            //消去演出中か否か、演出中なら何コマ目(+2)か。
     public bool[] phaseSkipFlag = new bool[5];                                 //フェイズを飛ばすかどうかのフラグ
-    public bool[,] useCard = new bool[2, HAND_NUM];                            //手札のカードが使われたか否か。trueなら使用されたということでターン終了時に新たなカードに変える（カードを引く）。
     public int[] waitCount = new int[2];                                       //通信待機をここまで何回行ったか
-    public int[] handFollower = new int[2];                                    //場に出ているシュジンコウ。０がプレイヤーで１がエネミー
     public int[] libraryNum = new int[2];                                      //ライブラリの残り枚数
     public int[] followerDamage = new int[2];                                  //シュジンコウに与えられるダメージ。
     public int[] lifePoint = new int[2];                                       //lifepoint。０がプレイヤーで１がエネミー。
     public int[] enemyGetManaPace = new int[BLOCKTYPE_NUM + 1];                //敵が各マナについて取得するペース
-    public int[,] handCard = new int[2, HAND_NUM];                             //手札のカード
+    public Card[,] handCard = new Card[2, HAND_NUM];                           //手札のカード
     public int[,] followerStatus = new int[2, 3];                              //シュジンコウのステータス。１次元目が所有者がプレイヤーか敵か。２次元目がステータス。（[,0]がAT、[,1]がDF、[,2]が特殊効果※未実装）
     public int[,] block = new int[WORLD_WIDTH, WORLD_HEIGHT];                  //フィールドの各座標に置かれているブロックの色   
     public bool[,]deleteBlock = new bool[WORLD_WIDTH, WORLD_HEIGHT];
-    public int[,,] cardMana = new int[2, HAND_NUM, BLOCKTYPE_NUM + 1];         //cardManaはカードに貯まっているマナの状況を管理する。１次元が「プレイヤー(0)かエネミー(1)か」、２次元が「何番目のカードか(0,1,2)」、３次元が「何色のマナか(1,2,3,4,5)」を表す。[0,0,2]ならプレイヤー側の０番目のカードの青マナということ。
-    public int[,,] cardCost = new int[2, HAND_NUM, BLOCKTYPE_NUM + 1];         //手札のコストを管理する配列。
-    public int[,,] cardSkill = new int[2, HAND_NUM, SKILL_TYPE];               //カードのスキル内容。一次元目がプレイヤーか敵か、２次元目が手札の何枚目か、３次元目がスキルの種類。中の数字がスキル威力。
-    /// <summary>
-    /// library[プレイヤー(0)エネミー(1),デッキの何枚目か(0~19),カード番号(0)、必要マナ(1)、スキル種別(2),細別(マナなら色、スキル種別なら第何種か)]
-    /// </summary>
-    public int[,,,] library = new int[2, DECKCARD_NUM, 3, 10];                 //ライブラリ（使用中のデッキ）の状態を管理する配列。１次元が「プレイヤーかエネミーか」２次元が「デッキの何番目のカード」か３次元が「カード番号(0)、必要マナ(1)、スキル種別(2)」、４次元目が「細別(マナなら色、スキル種別なら第何種か)」
+    public Card[,] library = new Card[2,DECKCARD_NUM];
 
     private GameObject objMatch;                                                             //通信用ゲームオブジェクト
     private GameObject objEliminatBlockParent;                                               //消去演出用オブジェクトの親オブジェクト
@@ -124,11 +117,15 @@ public class PuzzleSceneManager : MonoBehaviour
     private List<Sprite> followerImage = new List<Sprite>();                               //シュジンコウの画像（配列は全種類分だが、実際にロードするのは使用する分のみ）
 
     private System.Random rnd = new System.Random();                                         //乱数を生成。
+    private CardData c1;
+    public delegate void StatusEffectDelegate();
+    public event StatusEffectDelegate StatusEffect;                                      //状態異常処理を積むevent
 
 
     // Use this for initialization
     void Start()
     {
+        c1 = GetComponent<CardData>();
         waitCount[0] = 0;
         waitCount[1] = 0;
         StartCoroutine(MainGame());
@@ -359,17 +356,9 @@ public class PuzzleSceneManager : MonoBehaviour
             {
                 for (j = 0; j < DECKCARD_NUM; j++)
                 {
-                    if (library[l, j, 0, 0] == i && cardImage[i] == null)
+                    if (library[l, j].cardNum == i && cardImage[i] == null)
                     {
                         cardImage[i] = Resources.Load<Sprite>("card" + i.ToString());
-                        if (library[l, j, 2, 0] == SUMMON || library[l, j, 2, 2] == SUMMON)
-                        {
-                            followerImage[i] = Resources.Load<Sprite>("follower" + i.ToString());
-                        }//召喚呪文ならフォロワー画像も
-                    }
-                    if (library[l, j, 0, 0] == 73 && cardImage[19] == null)//速読を呼び出すカードなら、速読カードも読み込む
-                    {
-                        cardImage[19] = Resources.Load<Sprite>("card19");
                     }
                 }
             }
@@ -413,7 +402,6 @@ public class PuzzleSceneManager : MonoBehaviour
             {
                 followerStatus[l, i] = 0;
             }
-            handFollower[l] = 0;
             followerDamage[l] = 0;
         }
 
@@ -423,14 +411,14 @@ public class PuzzleSceneManager : MonoBehaviour
         {
             for (i = 0; i < HAND_NUM; i++)
             {
-                for (j = 0; j < BLOCKTYPE_NUM + 1; j++) { cardMana[k, i, j] = 0; }//貯めたマナのリセット
+                for (j = 0; j < BLOCKTYPE_NUM + 1; j++) { handCard[k,i].cardMana[j] = 0; }//貯めたマナのリセット
             }
         }
         //相手のマナ獲得能力の代入。
         for (i = 1; i < BLOCKTYPE_NUM + 1; i++)
         {
             enemyGetManaPace[i] = GetComponent<CardData>().enemyGetManaPace[i];
-            if (GameObject.Find("BGMManager").GetComponent<BGMManager>().multiPlay != 0) { enemyGetManaPace[i]=99999999; }//対人戦では獲得ペースを最大にして実質獲得しないようにする
+            if (GameObject.Find("BGMManager").GetComponent<BGMManager>().multiPlay != 0) { enemyGetManaPace[i]=0; }//対人戦では獲得ペースを最大にして実質獲得しないようにする
         }
 
 
@@ -487,27 +475,27 @@ public class PuzzleSceneManager : MonoBehaviour
     // 時間カウント関係処理
     private void TimeFunc()
     {
-        int i, j, k, l;
+        int i, j,k;
         MoveBlock();
-
-
         chainEffectTime++;
+
+        LibraryOutCheck();//ライブラリアウトが起きたかの判定。ブレイクタイミングでの負けを即座に判定するために毎フレーム判定（判定自体も軽い）
 
         if (turnEndButtonPush && turnProcess==false)
         {
-            StartCoroutine(TurnFunc());
-        }
-
-        //敵のマナ獲得
-        for (j = 1; j < BLOCKTYPE_NUM + 1; j++)
-        {
-            //同色マナはどのカードにも同じ個数入るので、入る個数をまず決定。
-            k = rnd.Next(5) * rnd.Next(4);
-            l = rnd.Next(100) + 500;
-            for (i = 0; i < HAND_NUM; i++)
+            //敵のマナ獲得
+            for (j = 1; j < BLOCKTYPE_NUM + 1; j++)
             {
-                if (timeCount % (enemyGetManaPace[j] * l / 600) == 0) { cardMana[1, i, j] += k; }
+                //同色マナはどのカードにも同じ個数入るので、入る個数をまず決定。
+                k=(int)(enemyGetManaPace[j]*(float)rnd.Next(0,20)/10);
+                for (i = 0; i < HAND_NUM; i++)
+                {
+                    handCard[1,i].cardMana[j] += k;
+                    if (handCard[1, i].cardMana[j] > handCard[1, i].cardCost[j]) { handCard[1, i].cardMana[0] += handCard[1, i].cardMana[j] - handCard[1, i].cardCost[j]; handCard[1, i].cardMana[j] = handCard[1, i].cardCost[j]; }
+                }
             }
+
+            StartCoroutine(TurnFunc());
         }
 
     }
@@ -588,7 +576,10 @@ public class PuzzleSceneManager : MonoBehaviour
         //カードにマナを補充。
         for (i = 0; i < HAND_NUM; i++)
         {//playerCardmanaはプレイヤー(cardManaの１次元が「プレイヤー(0)」である)のカードに貯まっているマナの状況を管理する。２次元(i)が「何番目のカードか(0,1,2)」、３次元(j)が「何色のマナか」を表す。[0,0,2]なら自分の０番目のカードの青マナということ。
-            for (j = 0; j < BLOCKTYPE_NUM + 1; j++) { cardMana[0, i, j] += playerEliminatBlockCount[j] * chainCount; }
+            for (j = 0; j < BLOCKTYPE_NUM + 1; j++) {
+                handCard[0,i].cardMana[j] += playerEliminatBlockCount[j] * chainCount;
+                if (handCard[0, i].cardMana[j] > handCard[0, i].cardCost[j]) { handCard[0, i].cardMana[0] += handCard[0, i].cardMana[j] - handCard[0, i].cardCost[j]; handCard[0, i].cardMana[j] = handCard[0, i].cardCost[j]; }
+            }
         }
 
         for (i = 0; i < BLOCKTYPE_NUM + 1; i++) { playerEliminatBlockCount[i] = 0; }
@@ -823,7 +814,7 @@ public class PuzzleSceneManager : MonoBehaviour
                 for (k = 0; k < BLOCKTYPE_NUM + 1; k++)
                 {
                     
-                    manacalc = cardCost[i, j, k];nowmanacalc = cardMana[i, j, k];
+                    manacalc = handCard[i,j].cardCost[k];nowmanacalc = handCard[i,j].cardMana[k];
                     manacalccount = 4;
 
                         while (manacalccount >= 0 && m<6)
@@ -841,7 +832,7 @@ public class PuzzleSceneManager : MonoBehaviour
                             }
                             else { manacalccount--; }
                         }
-                    if (cardCost[i, j, k] > cardMana[i, j, k])
+                    if (handCard[i,j].cardCost[k] > handCard[i,j].cardMana[k])
                     {
                     }
                     else
@@ -850,7 +841,7 @@ public class PuzzleSceneManager : MonoBehaviour
                     }
                 }
                 if (l == BLOCKTYPE_NUM+1) { objCard[i, j].GetComponent<Image>().color = new Color(1.0f, 1.0f, 1.0f, 0.7f - 0.3f * (Mathf.Cos((float)timeCount / 10))); } else { objCard[i, j].GetComponent<Image>().color = new Color(1.0f, 1.0f, 1.0f, 1.0f); }//魔力が足りていたらカードは点滅する。
-                if (useCard[i, j] == true) { objCard[i, j].GetComponent<Image>().color = new Color(0.5f, 0.5f, 0.5f, 1.0f); }//使用確定カードなら暗くなる。
+                if (handCard[i,j].useCard == true) { objCard[i, j].GetComponent<Image>().color = new Color(0.5f, 0.5f, 0.5f, 1.0f); }//使用確定カードなら暗くなる。
             }
             //ライブラリの描画
             objLibrary[i].GetComponentInChildren<Text>().text = libraryNum[i].ToString();
@@ -885,7 +876,7 @@ public class PuzzleSceneManager : MonoBehaviour
     {
 
         int i, j;
-        int[,] tmp = new int[3, 10];
+        Card tmp;
         int n = DECKCARD_NUM;
         while (n > 1)
         {
@@ -895,9 +886,9 @@ public class PuzzleSceneManager : MonoBehaviour
             {
                 for (j = 0; j < 10; j++)
                 {
-                    tmp[i, j] = library[player, k, i, j];
-                    library[player, k, i, j] = library[player, n, i, j];
-                    library[player, n, i, j] = tmp[i, j];
+                    tmp = library[player, k];
+                    library[player, k] = library[player, n];
+                    library[player, n] = tmp;
                 }
             }
         }
@@ -906,25 +897,17 @@ public class PuzzleSceneManager : MonoBehaviour
     //ライブラリからカードを引く（playerがプレイヤー(0)か敵(1)か、handが手札の何枚目か）
     public void DrawCard(int player, int hand)
     {
-        int i, k;
+        int i;
         //通信対戦で相手側のドローなら相手側で処理してくれるのでスキップ（それ以外の場合は処理）
         if (GameObject.Find("BGMManager").GetComponent<BGMManager>().multiPlay == 0 || player == 0)
         {
             for (i = 0; i < DECKCARD_NUM; i++)
             {
-                if (library[player, i, 0, 0] != 0)
+                if (library[player, i] != null)
                 {//ライブラリの上から順にカードがある（０でない）ところまで探していく。
-                    handCard[player, hand] = library[player, i, 0, 0];//カードの種類を代入
-                    for (k = 0; k < BLOCKTYPE_NUM + 1; k++)
-                    {
-                        cardCost[player, hand, k] = library[player, i, 1, k];//カードのコストを代入
-                    }
-                    for (k = 0; k < SKILL_TYPE; k++)
-                    {
-                        cardSkill[player, hand, k] = library[player, i, 2, k];//カードの効果を代入
-                    }
+                    handCard[player, hand] = library[player, i];//カードの種類を代入
                     DrawCardCost(player,hand);
-                    library[player, i, 0, 0] = 0;//カードを引いたのでライブラリから消す。
+                    library[player, i] = null;//カードを引いたのでライブラリから消す。
                     libraryNum[player]--;//ライブラリの残り枚数を1減らす。
                     if (GameObject.Find("BGMManager").GetComponent<BGMManager>().multiPlay != 0)
                     {
@@ -939,7 +922,7 @@ public class PuzzleSceneManager : MonoBehaviour
             //ここではlibraryOutFlagだけを変え、勝敗コルーチンへの移動はフェイズ終了時にまとめてやる（状況を変える判定はフェイズ終了時にまとめる。通信対戦の問題と、同フェイズ中の処理順問題を避けるため）
             if (player == 0)//プレイヤーのライブラリ切れならゲームオーバー
             {
-                StartCoroutine(LibraryMake(0));//ライブラリ作成
+                libraryOutFlag[0] = true;
                 if (GameObject.Find("BGMManager").GetComponent<BGMManager>().multiPlay != 0)
                 {
                     Match m1 = objMatch.GetComponent<Match>();
@@ -949,10 +932,26 @@ public class PuzzleSceneManager : MonoBehaviour
             }
             if (player == 1)
             {
-                StartCoroutine(LibraryMake(1));//ライブラリ作成
+                libraryOutFlag[1] = true;
             }
         }
     }
+
+    private void LibraryOutCheck()
+    {
+        if (libraryOutFlag[0] == true)//プレイヤーのライブラリ切れならゲームオーバー
+        {
+            StartCoroutine(Lose("-LibraryOut-"));
+            return;
+        }
+
+        if (libraryOutFlag[1] == true)//敵のライブラリ切れならクリア
+        {
+            StartCoroutine(Win("-LibraryOut-"));
+            return;
+        }
+    }
+
 
     //引いたカードのコスト表示
     public void DrawCardCost(int i,int j)
@@ -960,11 +959,11 @@ public class PuzzleSceneManager : MonoBehaviour
         int m = 0;
         int manacalc,nowmanacalc,manacalccount;
         objCard[i, j].GetComponent<Image>().sprite = null;//unity不具合回避
-        objCard[i, j].GetComponent<Image>().sprite = cardImage[handCard[i, j]];
+        objCard[i, j].GetComponent<Image>().sprite = cardImage[handCard[i, j].cardNum];
         for (int k = 0; k < 6; k++) { objCardMana[i, j, k].SetActive(false); }
         for (int k = 0; k < BLOCKTYPE_NUM + 1; k++)
         {
-            manacalc = cardCost[i, j, k]; nowmanacalc = cardMana[i, j, k];
+            manacalc = handCard[i,j].cardCost[k]; nowmanacalc = handCard[i,j].cardMana[k];
             manacalccount = 4;
             while (manacalccount >= 0 && m < 6)
             {
@@ -1047,11 +1046,11 @@ public class PuzzleSceneManager : MonoBehaviour
             k = 0;
             for (j = 0; j < BLOCKTYPE_NUM + 1; j++)
             {
-                if (cardMana[player, i, j] < cardCost[player, i, j]) { k = 1; break; }//マナが足りていないのが判明した時点でそのカードについては処理終了。       
+                if (handCard[player,i].cardMana[j] < handCard[player,i].cardCost[j]) { k = 1; break; }//マナが足りていないのが判明した時点でそのカードについては処理終了。       
             }
             if (k == 0)                    //ここまでk=0のままならマナが全て足りているので使用確定。
             {
-                useCard[player, i] = true;//カードの使用確定
+                handCard[player,i].useCard = true;//カードの使用確定
             }
         }
     }
@@ -1064,12 +1063,12 @@ public class PuzzleSceneManager : MonoBehaviour
         {
             for (i = 0; i < HAND_NUM; i++)
             {
-                if (useCard[l, i] == true && cardSkill[l, i, 2] == skill)                    //使用確定カードで２種カウンターなら発動。
+                if (handCard[l,i].useCard == true && handCard[l,i].cardSkillDelegate!=null)                    //使用確定カードで２種カウンターなら発動。
                 {
                     objCard[l, i].GetComponent<Image>().enabled = false;//使用したら非表示
                     seAudioSource[11].PlayOneShot(se[11]);
-                    if (skill != SUMMON) { yield return StartCoroutine(SpellEffect(l, i)); }//呪文演出(SUMMONは内蔵してるので飛ばす）
-                    OtherSpell(l, handCard[l, i]);//呪文効果
+                    yield return StartCoroutine(SpellEffect(l, i)); //呪文演出
+                    OtherSpell(l, handCard[l, i].cardNum);//呪文効果
                     while (cutInRunning == true) { yield return null; }//カットインが終わるまで待つ(OtherSpellは演出内蔵のものがあるので要カットイン待機)
                 }
             }
@@ -1113,7 +1112,7 @@ public class PuzzleSceneManager : MonoBehaviour
             {
                 for (i = 0; i < HAND_NUM; i++)
                 {
-                    if (useCard[l, i] == true && cardSkill[l, i, 2] != 0 && cardSkill[l, i, 2] != COUNTER)                    //使用確定カードで第二種呪文なら演出。
+                    if (handCard[l,i].useCard == true && handCard[l, i].cardSkillDelegate != null)                    //使用確定カードで第二種呪文なら演出。
                     {
                         objCard[l, i].GetComponent<Image>().enabled = false;//使用したら非表示
                         StartCoroutine(SpellMiss(l));//詠唱失敗演出を詠唱演出に重ねる。
@@ -1131,19 +1130,33 @@ public class PuzzleSceneManager : MonoBehaviour
             {
                 for (i = 0; i < HAND_NUM; i++)
                 {
-                    if (useCard[l, i] == true && cardSkill[l, i, 1] != 0)                    //使用確定カードで第一種呪文なら発動。
+                    if (handCard[l,i].useCard == true && (handCard[l, i].buff[0,0]!=0 || handCard[l, i].buff[0, 1] != 0 || handCard[l, i].buff[1, 0] != 0 || handCard[l, i].buff[1, 1] != 0))                    //使用確定カードで第一種呪文なら発動。
                     {
                         objCard[l, i].GetComponent<Image>().enabled = false;//使用したら非表示
-                        if ((cardSkill[l, i, 1] == OWN && handFollower[l] == 0) || (cardSkill[l, i, 1] == YOURS && ((handFollower[1] == 0 && l == 0) || (handFollower[0] == 0 && l == 1)))) { StartCoroutine(SpellMiss(l)); }//シュジンコウがいなければ詠唱失敗演出を詠唱演出に重ねる。
                         yield return StartCoroutine(SpellEffect(l, i));//呪文演出
                         while (cutInRunning == true) { yield return null; }//カットインが終わるまで待つ
-                        if (cardSkill[l, i, 1] == OWN && handFollower[l] > 0) { seAudioSource[5].PlayOneShot(se[5]); Buff(l, handCard[l, i]); }//自分のシュジンコウへの呪文効果（シュジンコウがいる場合のみ）
-                        if (cardSkill[l, i, 1] == YOURS && ((handFollower[1] > 0 && l == 0) || (handFollower[0] > 0 && l == 1)))//相手のシュジンコウへの呪文効果
+                        seAudioSource[6].PlayOneShot(se[6]);
+                        if (l == 0)
                         {
-                            seAudioSource[6].PlayOneShot(se[6]);
-                            if (l == 0) { Buff(1, handCard[l, i]); }
-                            if (l == 1) { Buff(0, handCard[l, i]); }
-                        }//呪文効果（シュジンコウがいる場合のみ）
+                            for (int j = 0; j < 2; j++)
+                            {
+                                for (int k = 0; k < 2; k++)
+                                {
+                                    followerStatus[j, k] += handCard[l, i].buff[j, k];
+                                }
+                            }
+                        }
+                        if (l == 1)
+                        {
+                            for (int j = 0; j < 2; j++)
+                            {
+                                for (int k = 0; k < 2; k++)
+                                {
+                                    if (j == 0) { followerStatus[1, k] += handCard[l, i].buff[1, k]; }
+                                    if (j == 1) { followerStatus[0, k] += handCard[l, i].buff[0, k]; }//敵が打った時は敵味方が逆。
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -1156,7 +1169,7 @@ public class PuzzleSceneManager : MonoBehaviour
             {
                 for (i = 0; i < HAND_NUM; i++)
                 {
-                    if (useCard[l, i] == true && cardSkill[l, i, 1] != 0)                    //使用確定カードで第一種呪文なら演出。
+                    if (handCard[l, i].useCard == true && (handCard[l, i].buff[0, 0] != 0 || handCard[l, i].buff[0, 1] != 0 || handCard[l, i].buff[1, 0] != 0 || handCard[l, i].buff[1, 1] != 0))                    //使用確定カードで第一種呪文なら演出。
                     {
                         objCard[l, i].GetComponent<Image>().enabled = false;//使用したら非表示
                         StartCoroutine(SpellMiss(l));//詠唱失敗演出を詠唱演出に重ねる。
@@ -1174,14 +1187,14 @@ public class PuzzleSceneManager : MonoBehaviour
             {
                 for (i = 0; i < HAND_NUM; i++)
                 {
-                    if (useCard[l, i] == true && cardSkill[l, i, 3] != 0)                    //使用確定カードで三種呪文なら発動。
+                    if (handCard[l, i].useCard == true && handCard[l,i].damage>0)                    //使用確定カードで三種呪文なら発動。
                     {
                         objCard[l, i].GetComponent<Image>().enabled = false;//使用したら非表示
                         yield return StartCoroutine(SpellEffect(l, i));//呪文演出
                         while (cutInRunning == true) { yield return null; }//カットインが終わるまで待つ
                         seAudioSource[1].PlayOneShot(se[1]);
-                        if (l == 0) { StartCoroutine(LifeDamage(1)); yield return StartCoroutine(Damage(1, cardSkill[l, i, 3])); }//呪文効果
-                        if (l == 1) { StartCoroutine(LifeDamage(0)); yield return StartCoroutine(Damage(0, cardSkill[l, i, 3])); }//Damage()の第一引数はダメージを「受ける」キャラクターなのでlとDamageの第一引数は逆になる
+                        if (l == 0) { StartCoroutine(LifeDamage(1)); yield return StartCoroutine(Damage(1, handCard[l,i].damage)); }//呪文効果
+                        if (l == 1) { StartCoroutine(LifeDamage(0)); yield return StartCoroutine(Damage(0, handCard[l, i].damage)); }//Damage()の第一引数はダメージを「受ける」キャラクターなのでlとDamageの第一引数は逆になる
                     }
                 }
             }
@@ -1194,7 +1207,7 @@ public class PuzzleSceneManager : MonoBehaviour
             {
                 for (i = 0; i < HAND_NUM; i++)
                 {
-                    if (useCard[l, i] == true && cardSkill[l, i, 3] != 0)                    //使用確定カードで第三種呪文なら演出。
+                    if (handCard[l, i].useCard == true && handCard[l, i].damage > 0)                    //使用確定カードで第三種呪文なら演出。
                     {
                         objCard[l, i].GetComponent<Image>().enabled = false;//使用したら非表示
                         StartCoroutine(SpellMiss(l));//詠唱失敗演出を詠唱演出に重ねる。
@@ -1212,8 +1225,6 @@ public class PuzzleSceneManager : MonoBehaviour
                 if (followerStatus[l, 2] != 0)                    //シュジンコウが特殊効果を持っていたならば
                 {
                     seAudioSource[11].PlayOneShot(se[11]);
-                    CardData c1 = GetComponent<CardData>();
-                    c1.FollowerSkill(l);//フォロワースキル発生
                                         //スキル演出（呪文演出とは別に、フォロワースキル関数内に新たに作る。カットインキャラはシュジンコウ、説明文は関数内で設定）
                     while (cutInRunning == true) { yield return null; }//カットインが終わるまで待つ(OtherSpellは演出内蔵のものがあるので要カットイン待機)
                 }
@@ -1225,37 +1236,14 @@ public class PuzzleSceneManager : MonoBehaviour
             LifePointCheck();
         }
 
+        //状態異常処理
+        StatusEffect();
+
         for (l = 0; l < 2; l++)
         {
             followerDamage[l] = 0;//シュジンコウダメージのリセット
         }
 
-        if (phaseSkipFlag[4] == false)
-        {
-            //第０種呪文フェイズ
-            for (l = 0; l < 2; l++)
-            {
-                yield return StartCoroutine(SummonCheck(l, 0));
-            }
-            LifePointCheck();
-        }
-        else
-        {
-            //フェイズスキップ時はスペルミス演出とカード消去のみ
-            for (l = 0; l < 2; l++)
-            {
-                for (i = 0; i < HAND_NUM; i++)
-                {
-                    if (useCard[l, i] == true && cardSkill[l, i, 0] != 0)                    //使用確定カードで第０種呪文なら演出。
-                    {
-                        objCard[l, i].GetComponent<Image>().enabled = false;//使用したら非表示
-                        StartCoroutine(SpellMiss(l));//詠唱失敗演出を詠唱演出に重ねる。
-                        yield return StartCoroutine(SpellEffect(l, i));//呪文演出
-                        while (cutInRunning == true) { yield return null; }//カットインが終わるまで待つ
-                    }
-                }
-            }
-        }
         
         TurnEnd();//ターン終了処理
         //通信対戦時の同期待ち（cardManaデータを一致させる）
@@ -1281,8 +1269,8 @@ public class PuzzleSceneManager : MonoBehaviour
                 if (objCard[l, i].GetComponent<Image>().enabled == false)
                 {
                     DrawCard(l, i);
-                    for (j = 0; j < BLOCKTYPE_NUM + 1; j++) { cardMana[l, i, j] = 0; }//カードに貯まったマナはリセット
-                    useCard[l, i] = false;//新たに引いたので、使っていない状態になおす。
+                    for (j = 0; j < BLOCKTYPE_NUM + 1; j++) { handCard[l,i].cardMana[j] = 0; }//カードに貯まったマナはリセット
+                    handCard[l,i].useCard = false;//新たに引いたので、使っていない状態になおす。
                     objCard[l, i].GetComponent<Image>().enabled = true;//引き直したので、非表示になっていたカードを表示しなおす。
                 }
             }
@@ -1290,90 +1278,29 @@ public class PuzzleSceneManager : MonoBehaviour
         CreateNewBlock();//空白部分にブロックを生成。
     }
 
-    public IEnumerator SummonCheck(int player, int spellType)
-    {
-        int i, m;
-        m = 0;
-
-        for (i = 0; i < HAND_NUM; i++)
-        {
-            if (useCard[player, i] == true && cardSkill[player, i, spellType] == SUMMON)//使用確定カードで、呼び出されている種別の召喚呪文（SUMMON）なら発動。
-            {
-                objCard[player, i].GetComponent<Image>().enabled = false;//使用したカードは非表示に
-                m++;
-            }
-        }
-            for (i = 0; i < HAND_NUM; i++)//どのカードが発動したのかの再確認
-            {
-                if (useCard[player, i] == true && cardSkill[player, i, spellType] == SUMMON)
-                {
-                    yield return StartCoroutine(SpellEffect(player, i));//呪文演出
-                    while (cutInRunning == true) { yield return null; }//カットインが終わるまで待つ
-                    Summon(player, handCard[player, i]);
-                }
-            }
-        
-    }
-
-    //シュジンコウ召喚（playerがプレイヤー(0)か敵(1)か、summonNumが召喚するシュジンコウ番号）
-    private void Summon(int player, int summonNum)
-    {
-        CardData c1 = GetComponent<CardData>();
-        c1.CardList();
-        followerStatus[player, 0] = c1.followerStatus[summonNum, 0];
-        followerStatus[player, 1] = c1.followerStatus[summonNum, 1];
-        followerStatus[player, 2] = c1.followerStatus[summonNum, 2];
-        handFollower[player] = summonNum;
-        seAudioSource[10].PlayOneShot(se[10]);
-    }
-
     //ダメージ処理関数（playerがダメージを「受けた」のがプレイヤーか敵か、damageがダメージ量）
     public IEnumerator Damage(int player, int damage)
     {
-        if (handFollower[player] == 0)//シュジンコウがいないとき
-        {
-            lifePoint[player] -= damage;
             if (damage != 0) { yield return StartCoroutine("DamageEffect", player); }
-        }
-        else
-        {
-            followerDamage[player] += damage; followerStatus[player, 1] -= damage;
+            followerDamage[player] += damage; lifePoint[player] -= damage;
             if (damage != 0) { yield return StartCoroutine("FollowerDamageEffect", player); }
-        }
-    }
-
-    //シュジンコウ強化
-    public void Buff(int player, int card)
-    {
-        int i;
-        CardData c1 = GetComponent<CardData>();
-        c1.CardList();
-        for (i = 0; i < 2; i++)
-        {
-            followerStatus[player, i] += c1.followerStatus[card, i];
-        }
-        if (followerStatus[player, 0] < 0) { followerStatus[player, 0] = 0; }
     }
 
     //第２種呪文効果
-    public void OtherSpell(int player, int card)
+    public void OtherSpell(int player, int cardnum)
     {
-        CardData c1 = GetComponent<CardData>();
-        c1.CardList();//カードリスト呼び出し
-        c1.cardSkill2Use[card](player);//第二種呪文の入ったデリゲート配列を呼び出す
+        c1.card[cardnum].cardSkillDelegate(player);//特殊効果の入ったデリゲート配列を呼び出す
     }
 
-    //第３種呪文演出(playerは呪文のダメージを受ける側)
+
+    //呪文ダメージ演出(playerは呪文のダメージを受ける側)
     public IEnumerator LifeDamage(int player)
     {
         //playerの炎上演出をオンに
-        if (handFollower[player] == 0)
-        {
             objLifeDamage[player].GetComponent<Image>().enabled = true; objLifeDamage[player].GetComponent<Animator>().enabled = true;
             for (int i = 0; i < 30; i++) { yield return null; }//演出フレームが終わるまで待つ。
                                                                //演出をオフに戻す
             objLifeDamage[player].GetComponent<Image>().enabled = false; objLifeDamage[player].GetComponent<Animator>().enabled = false;
-        }
     }
 
 
@@ -1394,12 +1321,10 @@ public class PuzzleSceneManager : MonoBehaviour
     //デッキをライブラリ（ゲームで使用するカード配列）に落とし込み、ライブラリをシャッフルする。（ライブラリの初期化）
     public IEnumerator LibraryMake(int player)
     {
-        int i, j;
-        CardData c1 = GetComponent<CardData>();
-        c1.CardList();
+        int i;
         if (player == 0)
         {
-            c1.LoadDeckList(0);
+            c1.LoadDeckList();
         }
         if (player == 1) { c1.EnemyDeckList(); }
         //デッキをライブラリに代入
@@ -1411,22 +1336,10 @@ public class PuzzleSceneManager : MonoBehaviour
         {
             for (i = 0; i < DECKCARD_NUM; i++)
             {
-                library[player, i, 0, 0] = c1.deckCard[player, i];//カードの種類
+                library[player, i] = c1.deckCard[player, i].Clone();//カードの種類
             }
             Shuffle(player);//シャッフル
             yield return StartCoroutine(WaitMatchData(600));//データ同期待ち
-        }
-        //カード番号が決まったなら、コストや効果をそれに合わせて代入(ライブラリが作成された段階でカードのデータも代入しておくことで、サーチカード等も実装しやすい）
-        for (i = 0; i < DECKCARD_NUM; i++)
-        {
-            for (j = 0; j < BLOCKTYPE_NUM + 1; j++)
-            {
-                library[player, i, 1, j] = c1.cardCost[library[player, i, 0, 0], j];
-            }//カードのコスト
-            for (j = 0; j < SKILL_TYPE; j++)
-            {
-                library[player, i, 2, j] = c1.cardSkill[library[player, i, 0, 0], j];
-            }//カードの効果
         }
         libraryNum[player] = DECKCARD_NUM;
     }
@@ -1438,8 +1351,6 @@ public class PuzzleSceneManager : MonoBehaviour
         /*
         int i;
         cutInRunning = true;
-        CardData c1 = GetComponent<CardData>();
-        c1.CardList();
         objCutIn[player].GetComponent<Image>().enabled = true;
 
         if (player == 0) { objCutIn[player].GetComponentInChildren<Text>().text += "<color=red>"; }
@@ -1480,8 +1391,6 @@ public class PuzzleSceneManager : MonoBehaviour
     {
         int i;
         cutInRunning = true;
-        CardData c1 = GetComponent<CardData>();
-        c1.CardList();
         objCutIn[player].GetComponent<Image>().enabled = true;
 
         if (player == 0) { objCutIn[player].GetComponentInChildren<Text>().text += "<color=red>"; }
@@ -1550,9 +1459,6 @@ public class PuzzleSceneManager : MonoBehaviour
     public IEnumerator FollowerAttack()
     {
         int i;
-
-        if (handFollower[0] != 0 && handFollower[1] != 0)//両方シュジンコウがいる場合の演出
-        {
             for (i = 0; i < 10; i++)
             {
                 objFollower[0].GetComponent<RectTransform>().localPosition = new Vector3(PLAYER_FOLLOWER_POSITION_X + 32 * i, PLAYER_FOLLOWER_POSITION_Y, 0);//画面の真ん中(-15)でぶつかる
@@ -1570,41 +1476,6 @@ public class PuzzleSceneManager : MonoBehaviour
             }
             objFollower[0].GetComponent<RectTransform>().localPosition = new Vector3(PLAYER_FOLLOWER_POSITION_X, PLAYER_FOLLOWER_POSITION_Y, 0);//元の位置へ
             objFollower[1].GetComponent<RectTransform>().localPosition = new Vector3(ENEMY_FOLLOWER_POSITION_X, ENEMY_FOLLOWER_POSITION_Y, 0);
-        }
-
-        if (handFollower[0] != 0 && handFollower[1] == 0)//プレイヤーにだけいる場合の演出
-        {
-            for (i = 0; i < 10; i++)
-            {
-                objFollower[0].GetComponent<RectTransform>().localPosition = new Vector3(PLAYER_FOLLOWER_POSITION_X + 86 * i, PLAYER_FOLLOWER_POSITION_Y, 0);//敵のＬＰ表示(530)にぶつかる
-                yield return null;
-            }
-            seAudioSource[8].PlayOneShot(se[8]);
-            yield return StartCoroutine(Damage(1, followerStatus[0, 0]));//Damageの第一引数はダメージを「受ける」キャラクターなのでシュジンコウの持ち主とは逆。
-            for (i = ATTACK_TIME / 2 - 10; i > 0; i--)
-            {
-                objFollower[0].GetComponent<RectTransform>().localPosition = new Vector3(PLAYER_FOLLOWER_POSITION_X + 86 * (10 / (ATTACK_TIME / 2 - 10)) * i, PLAYER_FOLLOWER_POSITION_Y, 0);//前for文の逆動作を残りの時間で実行。
-                yield return null;
-            }
-            objFollower[0].GetComponent<RectTransform>().localPosition = new Vector3(PLAYER_FOLLOWER_POSITION_X, PLAYER_FOLLOWER_POSITION_Y, 0);//元の位置へ
-        }
-
-        if (handFollower[0] == 0 && handFollower[1] != 0)//敵にだけいる場合の演出
-        {
-            for (i = 0; i < 10; i++)
-            {
-                objFollower[1].GetComponent<RectTransform>().localPosition = new Vector3(ENEMY_FOLLOWER_POSITION_X - 83 * i, ENEMY_FOLLOWER_POSITION_Y, 0);//プレイヤーのＬＰ表示(-530)にぶつかる
-                yield return null;
-            }
-            seAudioSource[8].PlayOneShot(se[8]);
-            yield return StartCoroutine(Damage(0, followerStatus[1, 0]));//Damageの第一引数はダメージを「受ける」キャラクターなのでシュジンコウの持ち主とは逆。
-            for (i = ATTACK_TIME / 2 - 10; i > 0; i--)
-            {
-                objFollower[1].GetComponent<RectTransform>().localPosition = new Vector3(ENEMY_FOLLOWER_POSITION_X - 83 * (10 / (ATTACK_TIME / 2 - 10)) * i, ENEMY_FOLLOWER_POSITION_Y, 0);//前for文の逆動作を残りの時間で実行。
-                yield return null;
-            }
-            objFollower[1].GetComponent<RectTransform>().localPosition = new Vector3(ENEMY_FOLLOWER_POSITION_X, ENEMY_FOLLOWER_POSITION_Y, 0);//元の位置へ
-        }
     }
 
     //ブロックの消去演出

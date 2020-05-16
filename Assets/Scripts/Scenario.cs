@@ -33,13 +33,13 @@ public class Scenario : MonoBehaviour {
 
     private List<int> mainStory = new List<int>();                    //パックから黒いカードを入手したフラグ(0が未入手、1が入手したばかり（イベント未読）、2が入手かつイベント既読)
 
-    public GameObject objText;                                               //シナリオテキスト(カード獲得時のpushがあるのでpublic)
+    //public GameObject objText;                                               //シナリオテキスト(カード獲得時のpushがあるのでpublic)
     private GameObject objSkipButton;                                        //スキップボタンオブジェクト
     private GameObject objFilm;                                              //回想演出のオブジェクト
     private GameObject objCoin;                                              //コイン表示のオブジェクト
     private GameObject objBookHolder;                                        //本（パック）選択ボタンのオブジェクト
     private GameObject objNowLoading;                                        //ナウローディング表示
-    private GameObject objTextImage;                                         //テキスト表示欄の画像
+    public GameObject objTextImage;                                         //テキスト表示欄の画像
     private GameObject objBackText;                                          //背景に文字を直書きする際のテキスト
     private GameObject[] objCharacter = new GameObject[MAX_CHARACTER];       //キャラクター表示
     private GameObject objCanvas;                                            //キャンバス
@@ -51,18 +51,16 @@ public class Scenario : MonoBehaviour {
     public GameObject objName;
     public GameObject objBlack;
     private Component[] SEComponent=new Component[5];
-    Texture2D screenTexture;
-
     private AudioClip bgm;                       //BGMのオーディオクリップ
     private List<Sprite> characterImage = new List<Sprite>();                //キャラクター立ち絵
     private List<Sprite> backImage = new List<Sprite>();                     //背景
+    CardData c1;
+
 
     // Use this for initialization
     void Start() {
         int i;
         //オブジェクトの読み込み
-        objText = GameObject.Find("text").gameObject as GameObject;
-        objTextImage = GameObject.Find("textback").gameObject as GameObject;
         objBackText = GameObject.Find("backtext").gameObject as GameObject;
         objCanvas = GameObject.Find("canvas0").gameObject as GameObject;
         objNowLoading = GameObject.Find("NowLoading").gameObject as GameObject;
@@ -105,6 +103,7 @@ public class Scenario : MonoBehaviour {
         objBookHolder.SetActive(false);
         //シナリオコルーチンの実行
         ReadText(PlayerPrefs.GetString("ScenarioName"));
+        CardData c1 = GetComponent<CardData>();
         StartCoroutine(ScenarioPlay());
     }
     
@@ -119,30 +118,29 @@ public class Scenario : MonoBehaviour {
     private void MakeEnemy()
     {
         //敵のデッキを作成。
-        CardData c1 = GetComponent<CardData>();
-        c1.deckCard[1, 0] = int.Parse(scenarioText[2]);
-        c1.deckCard[1, 1] = int.Parse(scenarioText[3]);
-        c1.deckCard[1, 2] = int.Parse(scenarioText[4]);
-        c1.deckCard[1, 3] = int.Parse(scenarioText[5]);
-        c1.deckCard[1, 4] = int.Parse(scenarioText[6]);
-        c1.deckCard[1, 5] = int.Parse(scenarioText[7]);
-        c1.deckCard[1, 6] = int.Parse(scenarioText[8]);
-        c1.deckCard[1, 7] = int.Parse(scenarioText[9]);
-        c1.deckCard[1, 8] = int.Parse(scenarioText[10]);
-        c1.deckCard[1, 9] = int.Parse(scenarioText[11]);
-        c1.deckCard[1, 10] = int.Parse(scenarioText[12]);
-        c1.deckCard[1, 11] = int.Parse(scenarioText[13]);
-        c1.deckCard[1, 12] = int.Parse(scenarioText[14]);
-        c1.deckCard[1, 13] = int.Parse(scenarioText[15]);
-        c1.deckCard[1, 14] = int.Parse(scenarioText[16]);
-        c1.deckCard[1, 15] = int.Parse(scenarioText[17]);
-        c1.deckCard[1, 16] = int.Parse(scenarioText[18]);
-        c1.deckCard[1, 17] = int.Parse(scenarioText[19]);
-        c1.deckCard[1, 18] = int.Parse(scenarioText[20]);
-        c1.deckCard[1, 19] = int.Parse(scenarioText[21]);
+        c1.deckCard[1, 0] = c1.card[int.Parse(scenarioText[2])].Clone();
+        c1.deckCard[1, 1] = c1.card[int.Parse(scenarioText[3])].Clone();
+        c1.deckCard[1, 2] = c1.card[int.Parse(scenarioText[4])].Clone();
+        c1.deckCard[1, 3] = c1.card[int.Parse(scenarioText[5])].Clone();
+        c1.deckCard[1, 4] = c1.card[int.Parse(scenarioText[6])].Clone();
+        c1.deckCard[1, 5] = c1.card[int.Parse(scenarioText[7])].Clone();
+        c1.deckCard[1, 6] = c1.card[int.Parse(scenarioText[8])].Clone();
+        c1.deckCard[1, 7] = c1.card[int.Parse(scenarioText[9])].Clone();
+        c1.deckCard[1, 8] = c1.card[int.Parse(scenarioText[10])].Clone();
+        c1.deckCard[1, 9] = c1.card[int.Parse(scenarioText[11])].Clone();
+        c1.deckCard[1, 10] = c1.card[int.Parse(scenarioText[12])].Clone();
+        c1.deckCard[1, 11] = c1.card[int.Parse(scenarioText[13])].Clone();
+        c1.deckCard[1, 12] = c1.card[int.Parse(scenarioText[14])].Clone();
+        c1.deckCard[1, 13] = c1.card[int.Parse(scenarioText[15])].Clone();
+        c1.deckCard[1, 14] = c1.card[int.Parse(scenarioText[16])].Clone();
+        c1.deckCard[1, 15] = c1.card[int.Parse(scenarioText[17])].Clone();
+        c1.deckCard[1, 16] = c1.card[int.Parse(scenarioText[18])].Clone();
+        c1.deckCard[1, 17] = c1.card[int.Parse(scenarioText[19])].Clone();
+        c1.deckCard[1, 18] = c1.card[int.Parse(scenarioText[20])].Clone();
+        c1.deckCard[1, 19] = c1.card[int.Parse(scenarioText[21])].Clone();
         for (int i = 0; i < DECKCARD_NUM; i++)
         {
-            PlayerPrefs.SetInt("enemyDeckCard" + i.ToString(), c1.deckCard[1, i]);//敵デッキのセーブ
+            PlayerPrefs.SetInt("enemyDeckCard" + i.ToString(), c1.deckCard[1, i].cardNum);//敵デッキのセーブ
         }
         //マナ獲得能力を設定。
         c1.enemyGetManaPace[0] = int.Parse(scenarioText[23]);
@@ -347,7 +345,7 @@ public class Scenario : MonoBehaviour {
     //描画内容関数。text：シナリオテキスト、back:背景の種類、backtext:背景に直書きする文字
     private IEnumerator ScenarioDraw(string text, string backtext)
     {
-        objText.GetComponent<Text>().text = "";//テキストの初期化
+        objTextImage.GetComponentInChildren<Text>().text = "";//テキストの初期化
         if (text == "")
         {
             objName.GetComponent<Image>().enabled = false;
@@ -373,12 +371,12 @@ public class Scenario : MonoBehaviour {
         }
         if (text == "")
         {
-            objText.GetComponent<Text>().enabled = false;
+            objTextImage.GetComponentInChildren<Text>().enabled = false;
         }
         else
         {
-            objText.GetComponent<Text>().enabled = true;
-            objText.GetComponent<Text>().text = text;
+            objTextImage.GetComponentInChildren<Text>().enabled = true;
+            objTextImage.GetComponentInChildren<Text>().text = text;
         }
         yield return null;
     }
@@ -431,9 +429,8 @@ public class Scenario : MonoBehaviour {
         objSkipButton.SetActive(false);
         yield return StartCoroutine(ScenarioDraw("獲得カード", ""));
         objGetCard[GETCARD_NUM].gameObject.SetActive(true);
-        CardData c1 = GetComponent<CardData>();
-        c1.CardList();//カードリストのロード
-        c1.LoadHaveCard(0);//カード所持状況のロード
+        
+        c1.LoadHaveCard();//カード所持状況のロード
         yield return StartCoroutine(u1.PushWait());
         for (i = 0; i < GETCARD_NUM; i++)
         {
@@ -573,19 +570,19 @@ public class Scenario : MonoBehaviour {
             cardImage[i] = Resources.Load<Sprite>("card" + getCard[i].ToString());//獲得したカードの画像をロード
             Resources.UnloadUnusedAssets();
             objGetCard[i].GetComponent<Image>().sprite = cardImage[i];//カード画像を表示
-            getCardText += c1.cardName[getCard[i]];//カード名を表示
+            getCardText += c1.card[getCard[i]].cardName;//カード名を表示
             //空白を入れて幅を合わせる
-            for (j = 0; j < 10 - c1.cardName[getCard[i]].Length; j++) { getCardText += "　"; }
+            for (j = 0; j < 10 - c1.card[getCard[i]].cardName.Length; j++) { getCardText += "　"; }
             //カードのレアリティを表示
             if (packCardRarity[choice] == COMMON) { getCardText += "<b><color=black>Ｃ　</color></b>";getCardRarity[i] = COMMON; }
             if (packCardRarity[choice] == UNCOMMON) { getCardText += "<b><color=#a06000ff>ＵＣ</color></b>";getCardRarity[i] = UNCOMMON; }
             if (packCardRarity[choice] == RARE) { getCardText += "<b><color=#ff5000ff>Ｒ　</color></b>";getCardRarity[i] = RARE; }
             //新しいカードならNew!表示、既に3枚持っているならOver表示
-            if (c1.haveCard[getCard[i]] == 0) { getCardText += "　<color=red>New!</color>"; }
-            if (c1.haveCard[getCard[i]] >= 3) { getCardText += "　<color=blue>Over...</color>"; }
-            if (c1.haveCard[getCard[i]] < 3)
+            if (c1.card[getCard[i]].haveCard == 0) { getCardText += "　<color=red>New!</color>"; }
+            if (c1.card[getCard[i]].haveCard >= 3) { getCardText += "　<color=blue>Over...</color>"; }
+            if (c1.card[getCard[i]].haveCard < 3)
             {
-                c1.haveCard[getCard[i]]++;
+                c1.card[getCard[i]].haveCard++;
             }//獲得したカードについて手持ちが3枚以下なら所持カードに追加。
             else
             {
@@ -596,14 +593,14 @@ public class Scenario : MonoBehaviour {
             }//手持ちが3枚以上ならコインに変換。
             getCardText += "\n";
             PlayerPrefs.SetInt("coin", coin);
-            PlayerPrefs.SetInt("haveCard" + getCard[i].ToString(), c1.haveCard[getCard[i]]);//セーブ
+            PlayerPrefs.SetInt("haveCard" + getCard[i].ToString(), c1.card[getCard[i]].haveCard);//セーブ
             if (getCard[i] == 15 && mainStory[1] == 0) { mainStory[1] = 1; PlayerPrefs.SetInt("mainStory1", 1); }//黒のカードを引いたらメインストーリーイベントのフラグをたてる。
             if (getCard[i] == 45 && mainStory[2] == 0) { mainStory[2] = 1; PlayerPrefs.SetInt("mainStory2", 1); }//黒のカードを引いたらメインストーリーイベントのフラグをたてる。
             if (getCard[i] == 62 && mainStory[3] == 0) { mainStory[3] = 1; PlayerPrefs.SetInt("mainStory3", 1); }//黒のカードを引いたらメインストーリーイベントのフラグをたてる。
             PlayerPrefs.Save();//カード取得のデータを確実に残すためセーブデータを書き込み。
         }
         StartCoroutine(getRareCard(getCardRarity));//レアカード判定に使う配列getCardRarityを引数の形でコルーチンに渡す
-        objText.GetComponent<Text>().text=getCardText;//テキストをオブジェクトに表示
+        objTextImage.GetComponentInChildren<Text>().text=getCardText;//テキストをオブジェクトに表示
         yield return StartCoroutine(u1.PushWait());
         objGetCard[GETCARD_NUM].gameObject.SetActive(false);
         coinForDraw = coin;
@@ -746,6 +743,10 @@ public class Scenario : MonoBehaviour {
         if (act[1] == "dash")
         {
             yield return StartCoroutine(CharacterDash(i, int.Parse(act[2])));
+        }
+        if (act[1] == "delete")
+        {
+            objCharacter[i].GetComponent<Image>().enabled = false;
         }
     }
 

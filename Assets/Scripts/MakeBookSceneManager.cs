@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Collections;
 
 public class MakeBookSceneManager : MonoBehaviour {
-    const int CARD_ALL = 77;                     //カードの全種類数。
+    const int CARD_ALL = 27;                     //カードの全種類数。
     const int BLOCKTYPE_NUM = 5;                 //ブロックの色の種類数
     const int SKILL_TYPE = 4;                    //カードのスキルタイプの数
     const int DECKCARD_NUM = 20;                //デッキのカード枚数
@@ -21,20 +21,21 @@ public class MakeBookSceneManager : MonoBehaviour {
     private List<Sprite> cardImage = new List<Sprite>();                                  //カードの画像（配列は全種類分だが、実際にロードするのは使用する分のみ）
 
     public int cardPage;                                                                  //カード一覧の現在のページ数
-    public List<int> cardRest = new List<int>();                                          //カードの残り枚数
     public Sprite[] bookImage = new Sprite[10];
+    CardData c1;
+
 
     // Use this for initialization
     void Start () {
         int i;
-
+        c1 = GetComponent<CardData>();
         //BGM読み込みと再生
         GetComponent<Utility>().BGMPlay(Resources.Load<AudioClip>("ソウルトゥーレディオ"));
 
         //所持カードとデッキのロード
-        CardData　c1 = GetComponent<CardData>();
-        c1.LoadHaveCard(1);
-        c1.LoadDeckList(1);
+
+        c1.LoadHaveCard();
+        c1.LoadDeckList();
 
         for (i = 0; i < CARD_ALL+1; i++)//カード画像全種読み込み
         {
@@ -94,7 +95,17 @@ public class MakeBookSceneManager : MonoBehaviour {
         {
             for (int i = 1; i < CARD_NUM + 1; i++)
             {
-                objSelectCard[i].GetComponent<Image>().color = new Color(1.0f, 1.0f, 1.0f, 1 - j * 0.1f);
+                if (i + cardPage < CARD_ALL + 1)//オブジェクトの数はCARD_NUM個
+                {
+                    if (c1.card[i + cardPage].cardRest > 0)
+                    {
+                        objSelectCard[i].GetComponent<Image>().color = new Color(1.0f, 1.0f, 1.0f, 1 - j * 0.1f);
+                    }
+                    else
+                    {
+                        objSelectCard[i].GetComponent<Image>().color = new Color(0.5f, 0.5f, 0.5f, 1 - j * 0.1f);
+                    }
+                }
             }
             yield return null;
         }
@@ -118,7 +129,17 @@ public class MakeBookSceneManager : MonoBehaviour {
         {
             for (int i = 1; i < CARD_NUM + 1; i++)
             {
-                objSelectCard[i].GetComponent<Image>().color = new Color(1.0f, 1.0f, 1.0f, j * 0.1f);
+                if (i + cardPage < CARD_ALL + 1)//オブジェクトの数はCARD_NUM個
+                {
+                    if (c1.card[i + cardPage].cardRest > 0)
+                    {
+                        objSelectCard[i].GetComponent<Image>().color = new Color(1.0f, 1.0f, 1.0f, j * 0.1f);
+                    }
+                    else
+                    {
+                        objSelectCard[i].GetComponent<Image>().color = new Color(0.5f, 0.5f, 0.5f, j * 0.1f);
+                    }
+                }
             }
             yield return null;
         }
@@ -127,7 +148,6 @@ public class MakeBookSceneManager : MonoBehaviour {
 
     public void PushSelectSceneButton()
     {
-        CardData c1 = GetComponent<CardData>();
         c1.SaveDeckList();
 
         objSelectCardExplain.SetActive(true);
@@ -161,12 +181,11 @@ public class MakeBookSceneManager : MonoBehaviour {
     public void ScreenChange()
     {
         int i;
-        CardData c1 = GetComponent<CardData>();
         //デッキの画像
         for (i = 0; i < DECKCARD_NUM; i++)
         {
             objDeckCard[i].GetComponent<Image>().sprite = null;//unity不具合回避
-            objDeckCard[i].GetComponent<Image>().sprite =cardImage[c1.deckCard[0,i]];
+            objDeckCard[i].GetComponent<Image>().sprite =cardImage[c1.deckCard[0,i].cardNum];
         }
         //手持ちカードの画像
         for (i = 1; i < CARD_NUM + 1; i++)
@@ -175,8 +194,8 @@ public class MakeBookSceneManager : MonoBehaviour {
             {
                 objSelectCard[i].GetComponent<Image>().sprite = null;//unity不具合回避
                 objSelectCard[i].GetComponent<Image>().sprite = cardImage[cardPage + i];
-                objCardRestText[i].GetComponent<Text>().text=cardRest[i + cardPage].ToString() + "/" + c1.haveCard[i+cardPage].ToString();
-                if (cardRest[i + cardPage] > 0)
+                objCardRestText[i].GetComponent<Text>().text=c1.card[i+cardPage].cardRest.ToString() + "/" + c1.card[i+cardPage].haveCard.ToString();
+                if (c1.card[i + cardPage].cardRest > 0)
                 {
                     objSelectCard[i].GetComponent<Image>().color = new Color(1.0f, 1.0f, 1.0f, 1.0f);
                 } else {
