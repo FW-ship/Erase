@@ -430,7 +430,6 @@ public class Scenario : MonoBehaviour {
         yield return StartCoroutine(ScenarioDraw("獲得カード", ""));
         objGetCard[GETCARD_NUM].gameObject.SetActive(true);
         
-        c1.LoadHaveCard();//カード所持状況のロード
         yield return StartCoroutine(u1.PushWait());
         for (i = 0; i < GETCARD_NUM; i++)
         {

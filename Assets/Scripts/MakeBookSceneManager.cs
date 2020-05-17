@@ -4,24 +4,27 @@ using System.Collections.Generic;
 using System.Collections;
 
 public class MakeBookSceneManager : MonoBehaviour {
-    const int CARD_ALL = 27;                     //カードの全種類数。
-    const int BLOCKTYPE_NUM = 5;                 //ブロックの色の種類数
+    const int BLOCKTYPE_NUM = 4;                 //ブロックの色の種類数
     const int SKILL_TYPE = 4;                    //カードのスキルタイプの数
     const int DECKCARD_NUM = 20;                //デッキのカード枚数
     const int CARD_NUM = 20;                    //入れ替え画面に表示されるカードの数
 
+    public Slider objManaSort;
     public GameObject objSourceBookAnime;
     public GameObject objCards;
     public GameObject objBackImage;
+    public GameObject objSort;
     public GameObject objSelectCardExplain;                                                 //objSelectCardはカード説明表示のゲームオブジェクトを代入する配列。
     private GameObject[] objDeckCard = new GameObject[DECKCARD_NUM];                      //objDeckCardはデッキのカードのゲームオブジェクトを代入する配列。
     private GameObject[] objSelectCard = new GameObject[CARD_NUM + 1];                    //objCardは手持ちカードのゲームオブジェクトを代入する配列。
     private GameObject[] objCardRestText = new GameObject[CARD_NUM + 1];                  //カードの残り枚数表示テキストのオブジェクトを代入する配列。
     public GameObject[] objNum = new GameObject[2];                                      //ページ番号を表示するオブジェクト
+    public GameObject[] objManaSortButton = new GameObject[BLOCKTYPE_NUM+1];
     private List<Sprite> cardImage = new List<Sprite>();                                  //カードの画像（配列は全種類分だが、実際にロードするのは使用する分のみ）
 
     public int cardPage;                                                                  //カード一覧の現在のページ数
     public Sprite[] bookImage = new Sprite[10];
+    public bool[] manaSort = new bool[BLOCKTYPE_NUM+1];
     CardData c1;
 
 
@@ -34,10 +37,7 @@ public class MakeBookSceneManager : MonoBehaviour {
 
         //所持カードとデッキのロード
 
-        c1.LoadHaveCard();
-        c1.LoadDeckList();
-
-        for (i = 0; i < CARD_ALL+1; i++)//カード画像全種読み込み
+        for (i = 0; i < c1.card.Count; i++)//カード画像全種読み込み
         {
             cardImage.Add(Resources.Load<Sprite>("card" + i.ToString()));
         }
@@ -81,7 +81,7 @@ public class MakeBookSceneManager : MonoBehaviour {
 
     public void PushDownButton()
     {
-        if (cardPage < CARD_ALL - 20)//ここはCARD_ALLに+1がいらない。CARD_ALL=20のときを考えると分かりやすい。+1があるとcardPage==0で条件を満たしてcardPage=20となり、21枚目からという存在しないカードのページを見ることになる。
+        if (cardPage < c1.card.Count - 21)//c1.card.Countはカード０枚の時でも要素０が存在する。なので-21になる。
         {
             cardPage += 20;
             StartCoroutine(PageTurn(false));
@@ -95,7 +95,7 @@ public class MakeBookSceneManager : MonoBehaviour {
         {
             for (int i = 1; i < CARD_NUM + 1; i++)
             {
-                if (i + cardPage < CARD_ALL + 1)//オブジェクトの数はCARD_NUM個
+                if (i + cardPage < c1.card.Count)//オブジェクトの数はCARD_NUM個
                 {
                     if (c1.card[i + cardPage].cardRest > 0)
                     {
@@ -123,13 +123,13 @@ public class MakeBookSceneManager : MonoBehaviour {
         objNum[0].GetComponentInChildren<Image>().enabled = true;
         objNum[1].GetComponentInChildren<Image>().enabled = true;
         if (cardPage < 20) { objNum[0].GetComponentInChildren<Image>().enabled = false; }
-        if (cardPage >= CARD_ALL - 20) { objNum[1].GetComponentInChildren<Image>().enabled = false; }
+        if (cardPage >= c1.card.Count - 21) { objNum[1].GetComponentInChildren<Image>().enabled = false; }
         objSourceBookAnime.SetActive(false);
         for (j = 0; j <= 10; j++)
         {
             for (int i = 1; i < CARD_NUM + 1; i++)
             {
-                if (i + cardPage < CARD_ALL + 1)//オブジェクトの数はCARD_NUM個
+                if (i + cardPage < c1.card.Count)//オブジェクトの数はCARD_NUM個
                 {
                     if (c1.card[i + cardPage].cardRest > 0)
                     {
@@ -159,19 +159,17 @@ public class MakeBookSceneManager : MonoBehaviour {
     private void DrawPage()
     {
         int i;
-        for (i = cardPage+1; i < CARD_NUM+cardPage+1; i++)//手持ちカードオブジェクトの配列は１番から
+        for (i = 1; i < CARD_NUM+1; i++)//手持ちカードオブジェクトの配列は１番から
         {
-            if (i - cardPage <= CARD_NUM)//オブジェクトの数はCARD_NUM個
-            {
-                if (i < CARD_ALL+1)
+                if (i < c1.card.Count)
                 {
-                    objSelectCard[i - cardPage].gameObject.SetActive(true);//欠番でないオブジェクトはアクティブに
+                    objSelectCard[i].gameObject.SetActive(true);//欠番でないオブジェクトはアクティブに
                 }
                 else
                 {
-                    objSelectCard[i - cardPage].gameObject.SetActive(false);//欠番のオブジェクトは非アクティブに
+                    objSelectCard[i].gameObject.SetActive(false);//欠番のオブジェクトは非アクティブに
                 }
-            }
+            
         }
         //手持ちカード、デッキのカードについて描画。
         ScreenChange();
@@ -190,10 +188,10 @@ public class MakeBookSceneManager : MonoBehaviour {
         //手持ちカードの画像
         for (i = 1; i < CARD_NUM + 1; i++)
         {
-            if (i + cardPage < CARD_ALL+1)//オブジェクトの数はCARD_NUM個
+            if (i + cardPage < c1.card.Count)//オブジェクトの数はCARD_NUM個
             {
                 objSelectCard[i].GetComponent<Image>().sprite = null;//unity不具合回避
-                objSelectCard[i].GetComponent<Image>().sprite = cardImage[cardPage + i];
+                objSelectCard[i].GetComponent<Image>().sprite = cardImage[c1.card[i + cardPage].cardNum];
                 objCardRestText[i].GetComponent<Text>().text=c1.card[i+cardPage].cardRest.ToString() + "/" + c1.card[i+cardPage].haveCard.ToString();
                 if (c1.card[i + cardPage].cardRest > 0)
                 {
@@ -203,5 +201,47 @@ public class MakeBookSceneManager : MonoBehaviour {
                 }
             }
         }
+    }
+
+    public void PushManaSort(int x)
+    {
+        if (manaSort[x]) {
+            manaSort[x] = false;
+            objManaSortButton[x].GetComponent<Image>().color = new Color(1,1,1, 1.0f);
+        }
+        else {
+            manaSort[x] = true;
+            objManaSortButton[x].GetComponent<Image>().color = new Color(0.3f, 0.3f, 0.3f, 1.0f);
+        }
+    }
+
+    public void PushSort()
+    {
+        objSort.SetActive(true);
+    }
+
+    public void PushSortEnd()
+    {
+        c1.CardList();
+        for (int i = 0; i < DECKCARD_NUM; i++)
+        {
+            c1.card[c1.deckCard[0, i].cardNum].cardRest--;//デッキで使っている分、残りカードの枚数を減らす。
+        }
+        c1.card.RemoveAll(CardSortMatch);
+        cardPage = 0;
+        StartCoroutine(PageTurn(false));
+        objSort.SetActive(false);
+    }
+
+    public bool CardSortMatch(Card c)
+    {
+        int value = 1;
+        bool result = false;
+        for (int i = 0; i < objManaSort.value; i++) { value *= 3; }
+        for (int i = 0; i < BLOCKTYPE_NUM; i++) {
+            if (value < c.cardCost[i]) { result = true; }
+            if (c.cardCost[i] > 0 && manaSort[i]) { result = true; }
+                }
+        return result;
     }
 }

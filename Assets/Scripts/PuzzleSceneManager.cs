@@ -25,8 +25,6 @@ public class PuzzleSceneManager : MonoBehaviour
     const int FIELD_TOP = 315;                   //フィールドの上端（ピクセル）
     const int DECKCARD_NUM = 20;                 //デッキの枚数
     const int HAND_NUM = 3;                      //手札の枚数
-    const int SKILL_TYPE = 2;                    //カードのスキルタイプの数
-    const int CARD_ALL = 27;                    //カードの全種類数
     const int SOUND_NUM = 16;                    //効果音の種類数
     const int SPELL_TIME = 60;                   //呪文カットインの演出時間（フレーム）
     const int ATTACK_TIME = 60;                  //シュジンコウの攻撃演出時間（フレーム）
@@ -345,14 +343,14 @@ public class PuzzleSceneManager : MonoBehaviour
         }
 
         //カード画像読み込み
-        for (i = 0; i < CARD_ALL + 1; i++)
+        for (i = 0; i < c1.card.Count; i++)
         {
             cardImage.Add(null);//カード番号と同じ数だけ要素数を確保。（この手順がないと要素数が足りないとしてエラーが出る）
             followerImage.Add(null);
         }
         for (l = 0; l < 2; l++)
         {
-            for (i = 1; i < CARD_ALL + 1; i++)
+            for (i = 1; i < c1.card.Count; i++)
             {
                 for (j = 0; j < DECKCARD_NUM; j++)
                 {
@@ -1322,10 +1320,6 @@ public class PuzzleSceneManager : MonoBehaviour
     public IEnumerator LibraryMake(int player)
     {
         int i;
-        if (player == 0)
-        {
-            c1.LoadDeckList();
-        }
         if (player == 1) { c1.EnemyDeckList(); }
         //デッキをライブラリに代入
         if (player == 1 && GameObject.Find("BGMManager").GetComponent<BGMManager>().multiPlay != 0)

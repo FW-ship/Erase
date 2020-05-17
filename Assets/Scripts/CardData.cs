@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using System.Collections.Generic;
 using UnityEngine.UI;
 //using UnityEditor;
 
@@ -6,8 +7,6 @@ using UnityEngine.UI;
 
 [DefaultExecutionOrder(-1)]//CardDataは他から引用されるのでstartを先行処理させる。
 public class CardData : MonoBehaviour {
-
-    const int CARD_ALL = 27;                     //カードの全種類数
     const int BLOCKTYPE_NUM = 4;                 //ブロックの色の種類数
     const int DECKCARD_NUM = 20;                 //デッキのカード枚数
     const int HAND_NUM = 3;                      //手札の枚数
@@ -23,7 +22,7 @@ public class CardData : MonoBehaviour {
     public Card[,] deckCard = new Card[2, DECKCARD_NUM];                   //デッキに入れているカードを示す配列。（中の数字がカード番号）
     public int[] enemyGetManaPace = new int[BLOCKTYPE_NUM + 1];          //敵のマナ獲得ペース
 
-    public Card[] card;
+    public List<Card> card=new List<Card>();
     PuzzleSceneManager p1;
 
     //持っているカードをセーブデータから取り出す
@@ -31,7 +30,7 @@ public class CardData : MonoBehaviour {
     {
         int i;
 
-        for (i = 0; i < CARD_ALL + 1; i++)
+        for (i = 0; i < card.Count; i++)
         {
             card[i].haveCard = 0;
         }
@@ -43,20 +42,20 @@ public class CardData : MonoBehaviour {
             card[4].haveCard = 3;
             card[5].haveCard = 3;
             card[6].haveCard = 3;
-            card[7].haveCard = 2;
-            for (i = 1; i < CARD_ALL + 1; i++)
+            card[7].haveCard = 3;
+            for (i = 1; i < card.Count; i++)
             {
                 PlayerPrefs.SetInt("haveCard" + i.ToString(), card[i].haveCard);
             }
         }
         else
         {
-            for (i = 1; i < CARD_ALL + 1; i++)
+            for (i = 1; i < card.Count; i++)
             {
                 card[i].haveCard = PlayerPrefs.GetInt("haveCard" + i.ToString(), 0);
             }
         }
-            for (i = 1; i < CARD_ALL + 1; i++)
+            for (i = 1; i < card.Count; i++)
             {
                 card[i].cardRest = card[i].haveCard;//残りカードの数＝手持ちカードの数（この後LoadDeckList関数やDropスクリプトのOnDrop関数でデッキ使用分を増減する）
             }
@@ -131,82 +130,86 @@ public class CardData : MonoBehaviour {
     public void CardList()
     {
 
-
+        card.Clear();
         //①召喚について。AT…攻撃力。１ターンに１度この点数の攻撃を行う。DF…防御力。１ターンにこの点数以上のダメージを受けると破壊される。（ターンが終わればリセットされる）
         //②その他呪文について。スキルの処理についてはデリゲートによって配列管理した関数を使っている。
-        card = new Card[]
-            {
-                new Card{ },//採番に合わせ、０番にはカードを入れない。
-                new Card{
-                    cardNum=1,
-        cardName = "火花",
-        cardExplain = "<color=red>火花</color>\nコスト：赤3　　　　<b><color=black>Ｃ</color></b>\n対戦相手に1点のダメージを与える。\n\n<i>すべては小さな火花から始まる。</i>",
-        cardCost = new int[]{0,3,0,0,0},
-        damage = 1
-                },
-                new Card{
-                    cardNum=2,
-        cardName = "火炎",
-        cardExplain = "<color=red>火炎</color>\nコスト：赤9　　　　<b><color=black>Ｃ</color></b>\n対戦相手に2点のダメージを与える。\n\n<i>すべては炎を内包する。</i>",
-        cardCost = new int[]{9,3,0,0,0},
-        damage = 2
-                },
-                new Card{
-                    cardNum=3,
-        cardName = "稲妻",
-        cardExplain = "<color=red>稲妻</color>\nコスト：赤27　　　　<b><color=black>Ｃ</color></b>\n対戦相手に4点のダメージを与える。\n\n<i>すべては空がもたらす。</i>",
-        cardCost = new int[]{27,3,0,0,0},
-        damage = 4
-                },
-                new Card{
-                    cardNum=4,
-        cardName = "業火",
-        cardExplain = "<color=red>業火</color>\nコスト：赤81　　　　<b><color=black>Ｃ</color></b>\n対戦相手に6点のダメージを与える。\n\n<i>すべてを灰にする力。</i>",
-        cardCost = new int[]{81,3,0,0,0},
-        damage = 6
-                },
-                new Card{
- cardNum=5,
-        cardName = "青光",
-        cardExplain = "<color=red>青光</color>\nコスト：赤243　　　　<b><color=#a06000ff>ＵＣ</color></b>\n対戦相手に8点のダメージを与える。\n\n<i>すべてに沁みとおる青白い光。1934</i>",
-        cardCost = new int[]{243,3,0,0,0},
-        damage = 8
-                },
-                new Card{
-                    cardNum=6,
-        cardName = "グイ",
-        cardExplain = "<color=green>グイ</color>\nコスト：青3　　　　<b><color=black>Ｃ</color></b>\nAT1/DF1\n\n<i>私たちはどこから来てどこへ行くのだろう。</i>",
-        cardCost = new int[]{0,0,3,0,0},
-        cardSkillDelegate = (int player) => { p1.StatusEffect += () => { p1.lifePoint[player]--; }; },
-        cardSpeed=OTHER},
-                new Card{
-                    cardNum=7,
-        cardName = "テスタ",
-        cardExplain = "<color=green>テスタ</color>\nコスト：青9　　　　<b><color=black>Ｃ</color></b>\nAT1/DF1\n\n<i>私たちはどこから来てどこへ行くのだろう。</i>",
-        cardCost = new int[]{0,0,9,0,0},
-        cardSkillDelegate = (int player) => { p1.StatusEffect += () => { p1.lifePoint[player]--; }; },
-        cardSpeed=OTHER},
-                new Card{ },
-                new Card{ },
-                new Card{ },
-                new Card{ },
-                new Card{ },
-                new Card{ },
-                new Card{ },
-                new Card{ },
-                new Card{ },
-                new Card{ },
-                new Card{ },
-                new Card{ },
-                new Card{ },
-                new Card{ },
-                new Card{ },
-                new Card{ },
-                new Card{ },
-                new Card{ },
-                new Card{ },
-                new Card{ },
-            };
+        card.Add(new Card());//採番に合わせ、０番にはカードを入れない。
+        card.Add(
+                new Card {
+                    cardNum = 1,
+                    cardName = "火花",
+                    cardExplain = "<color=red>火花</color>\nコスト：赤3　　　　<b><color=black>Ｃ</color></b>\n対戦相手に1点のダメージを与える。\n\n<i>すべては小さな火花から始まる。</i>",
+                    cardCost = new int[] { 0, 3, 0, 0, 0 },
+                    damage = 1
+                });
+        card.Add(new Card {
+            cardNum = 2,
+            cardName = "火炎",
+            cardExplain = "<color=red>火炎</color>\nコスト：赤9　　　　<b><color=black>Ｃ</color></b>\n対戦相手に2点のダメージを与える。\n\n<i>すべては炎を内包する。</i>",
+            cardCost = new int[] { 9, 3, 0, 0, 0 },
+            damage = 2
+        });
+        card.Add(new Card {
+            cardNum = 3,
+            cardName = "稲妻",
+            cardExplain = "<color=red>稲妻</color>\nコスト：赤27　　　　<b><color=black>Ｃ</color></b>\n対戦相手に4点のダメージを与える。\n\n<i>すべては空がもたらす。</i>",
+            cardCost = new int[] { 27, 3, 0, 0, 0 },
+            damage = 4
+        });
+        card.Add(new Card {
+            cardNum = 4,
+            cardName = "業火",
+            cardExplain = "<color=red>業火</color>\nコスト：赤81　　　　<b><color=black>Ｃ</color></b>\n対戦相手に6点のダメージを与える。\n\n<i>すべてを灰にする力。</i>",
+            cardCost = new int[] { 81, 3, 0, 0, 0 },
+            damage = 6
+        });
+        card.Add(new Card {
+            cardNum = 5,
+            cardName = "青光",
+            cardExplain = "<color=red>青光</color>\nコスト：赤243　　　　<b><color=#a06000ff>ＵＣ</color></b>\n対戦相手に8点のダメージを与える。\n\n<i>すべてに沁みとおる青白い光。1934</i>",
+            cardCost = new int[] { 243, 3, 0, 0, 0 },
+            damage = 8
+        });
+        card.Add(new Card {
+            cardNum = 6,
+            cardName = "グイ",
+            cardExplain = "<color=green>グイ</color>\nコスト：青3　　　　<b><color=black>Ｃ</color></b>\nAT1/DF1\n\n<i>私たちはどこから来てどこへ行くのだろう。</i>",
+            cardCost = new int[] { 0, 0, 3, 0, 0 },
+            cardSkillDelegate = (int player) => { p1.StatusEffect += () => { p1.lifePoint[player]--; }; },
+            cardSpeed = OTHER
+        });
+        card.Add(new Card {
+            cardNum = 7,
+            cardName = "テスタ",
+            cardExplain = "<color=green>テスタ</color>\nコスト：青9　　　　<b><color=black>Ｃ</color></b>\nAT1/DF1\n\n<i>私たちはどこから来てどこへ行くのだろう。</i>",
+            cardCost = new int[] { 0, 0, 9, 0, 0 },
+            cardSkillDelegate = (int player) => { p1.StatusEffect += () => { p1.lifePoint[player]--; }; },
+            cardSpeed = OTHER
+        });
+        /*
+                card.Add(new Card{ });
+                card.Add(new Card{ });
+                card.Add(new Card{ });
+                card.Add(new Card{ });
+                card.Add(new Card{ });
+                card.Add(new Card{ });
+                card.Add(new Card{ });
+                card.Add(new Card{ });
+                card.Add(new Card{ });
+                card.Add(new Card{ });
+                card.Add(new Card{ });
+                card.Add(new Card{ });
+                card.Add(new Card{ });
+                card.Add(new Card{ });
+                card.Add(new Card{ });
+                card.Add(new Card{ });
+                card.Add(new Card{ });
+                card.Add(new Card{ });
+                card.Add(new Card{ });
+                card.Add(new Card{ });
+                */
+
+        LoadHaveCard();
     }
 
 
@@ -318,6 +321,7 @@ public class CardData : MonoBehaviour {
     void Start() {
         p1 = GetComponent<PuzzleSceneManager>();
         CardList();
+        LoadDeckList();
     }
 
     // Update is called once per frame

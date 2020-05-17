@@ -6,6 +6,7 @@ public class Drop : MonoBehaviour, IDropHandler
     GameObject refObj;
     CardData c1;
     MakeBookSceneManager m1;
+
     // Use this for initialization
     void Start()
     {
@@ -23,9 +24,9 @@ public class Drop : MonoBehaviour, IDropHandler
     {
         if (c1.card[Drag.dragNum].cardRest > 0)//入れるカードの残り枚数が０でないならデッキに入れてよい。
         {
-        c1.card[c1.deckCard[0, int.Parse(name.Substring(8))].cardNum].cardRest++;//デッキから外れるカードの残り枚数を１増やす。
+        foreach (Card c in c1.card) { if (c.cardNum == c1.deckCard[0, int.Parse(name.Substring(8))].cardNum) { c.cardRest++; } }//デッキから外れるカードの残り枚数を１増やす。
         c1.deckCard[0,int.Parse(name.Substring(8))] = c1.card[Drag.dragNum];  //先頭から8文字（deckcard)を抜いて数値に型変換したものがデッキのカード番号。そこに新たにドラッグしてきたカードの種類を入れる。
-        c1.card[c1.deckCard[0, int.Parse(name.Substring(8))].cardNum].cardRest--;//デッキに入れたカードの残り枚数を１減らす。
+        c1.deckCard[0, int.Parse(name.Substring(8))].cardRest--;//デッキに入れたカードの残り枚数を１減らす。
         }
         m1.ScreenChange();
     }

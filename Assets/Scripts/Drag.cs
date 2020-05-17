@@ -68,7 +68,8 @@ public class Drag : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHand
             if (e.position.y > objDeckCard[i].GetComponent<RectTransform>().localPosition.y + 390 - 60 &&
                 e.position.y < objDeckCard[i].GetComponent<RectTransform>().localPosition.y +390 + 60 &&
                 e.position.x > objDeckCard[i].GetComponent<RectTransform>().localPosition.x + 640 - 45 &&
-                e.position.x < objDeckCard[i].GetComponent<RectTransform>().localPosition.x +640 + 45)
+                e.position.x < objDeckCard[i].GetComponent<RectTransform>().localPosition.x +640 + 45 &&
+                r.position.y >= 430)
             { objDeckCard[i].GetComponent<Image>().color = new Color(1.0f, 1.0f, 1.0f, 0); } else { objDeckCard[i].GetComponent<Image>().color = new Color(1.0f, 1.0f, 1.0f, 1.0f); }
         }
 
