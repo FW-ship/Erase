@@ -138,7 +138,7 @@ public class CardData : MonoBehaviour {
                 new Card {
                     cardNum = 1,
                     cardName = "火花",
-                    cardExplain = "<color=red>火花</color>\nコスト：赤3　　　　<b><color=black>Ｃ</color></b>\n対戦相手に1点のダメージを与える。\n\n<i>すべては小さな火花から始まる。</i>",
+                    cardExplain = "<color=red>火花</color>\nコスト：<color=red><size=48>・★☽☀۞۝</size>：赤3</color>　　　　<b><color=black>Ｃ</color></b>\n対戦相手に1点のダメージを与える。\n\n<i>すべては小さな火花から始まる。</i>",
                     cardCost = new int[] { 0, 3, 0, 0, 0 },
                     damage = 1
                 });
@@ -173,20 +173,23 @@ public class CardData : MonoBehaviour {
         card.Add(new Card {
             cardNum = 6,
             cardName = "グイ",
-            cardExplain = "<color=green>グイ</color>\nコスト：青3　　　　<b><color=black>Ｃ</color></b>\nAT1/DF1\n\n<i>私たちはどこから来てどこへ行くのだろう。</i>",
+            cardExplain = "<color=green>グイ</color>\nコスト：青3　　　　<b><color=black>Ｃ</color></b>\n対戦相手のライフを１点減少させる。\n\n<i>私たちはどこから来てどこへ行くのだろう。</i>",
             cardCost = new int[] { 0, 0, 3, 0, 0 },
-            cardSkillDelegate = (int player) => { p1.StatusEffect += () => { p1.lifePoint[player]--; }; },
+            cardSkillDelegate = (int player) => { if (player == 0) { p1.lifePoint[1]--; } else { p1.lifePoint[1]--; } },
             cardSpeed = OTHER
         });
         card.Add(new Card {
             cardNum = 7,
             cardName = "テスタ",
-            cardExplain = "<color=green>テスタ</color>\nコスト：青9　　　　<b><color=black>Ｃ</color></b>\nAT1/DF1\n\n<i>私たちはどこから来てどこへ行くのだろう。</i>",
+            cardExplain = "<color=green>テスタ</color>\nコスト：青9　　　　<b><color=black>Ｃ</color></b>\n対戦相手に<b>ターン終了時：１点のライフを失う。\n効果終了時：３点のライフを失う。</b>の状態変化を与える。\n\n<i>私たちはどこから来てどこへ行くのだろう。</i>",
             cardCost = new int[] { 0, 0, 9, 0, 0 },
-            cardSkillDelegate = (int player) => { p1.StatusEffect += () => { p1.lifePoint[player]--; }; },
+            cardSkillDelegate = (int player) => {
+                if (player == 0) { p1.statusEffectEnemy.Add(new StatusEffect { cardNum = 7, restTurn = 2,cardExplain="ターン終了時：１点のダメージを受ける。\n効果終了時：３点のダメージを受ける。",statusEffectDelegate=()=> { p1.lifePoint[1]-- ; }, statusEndEffectDelegate = () => { p1.lifePoint[1]-=3; } }); } else {
+                    p1.statusEffectPlayer.Add(new StatusEffect { cardNum = 7, restTurn = 2, cardExplain = "ターン終了時：１点のダメージを受ける。\n効果終了時：３点のダメージを受ける。", statusEffectDelegate = () => { p1.lifePoint[0]--; }, statusEndEffectDelegate = () => { p1.lifePoint[0] -= 3; } });
+                } },
             cardSpeed = OTHER
         });
-        /*
+        
                 card.Add(new Card{ });
                 card.Add(new Card{ });
                 card.Add(new Card{ });
@@ -207,7 +210,7 @@ public class CardData : MonoBehaviour {
                 card.Add(new Card{ });
                 card.Add(new Card{ });
                 card.Add(new Card{ });
-                */
+                
 
         LoadHaveCard();
     }
@@ -348,12 +351,27 @@ public class Card
     public bool useCard;
     public int cardRest;
     public int haveCard;
-
     // コピーを作成するメソッド
     public Card Clone()
     {
         return (Card)MemberwiseClone();
     }
 
+}
+
+
+public class StatusEffect
+{
+    public int restTurn;//残りターン
+    public int cardNum;//カード画像
+    public string cardExplain;//カード説明文
+    public delegate void StatusEffectDelegate();
+    public StatusEffectDelegate statusEffectDelegate;//継続効果
+    public StatusEffectDelegate statusEndEffectDelegate;//終了時効果
+    // コピーを作成するメソッド
+    public Card Clone()
+    {
+        return (Card)MemberwiseClone();
+    }
 }
 

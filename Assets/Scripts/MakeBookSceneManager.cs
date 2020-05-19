@@ -244,4 +244,17 @@ public class MakeBookSceneManager : MonoBehaviour {
                 }
         return result;
     }
+
+    public void SourcebookPush()
+    {
+        StartCoroutine(SourcebookSwipe(Input.mousePosition));
+    }
+    public IEnumerator SourcebookSwipe(Vector3 position)
+    {
+        while (Input.GetMouseButton(0) && Input.mousePosition.x <position.x+50 && Input.mousePosition.x > position.x - 50) {
+            yield return null;
+        }
+        if (Input.mousePosition.x >= position.x + 50) { PushUpButton(); }
+        if (Input.mousePosition.x <= position.x - 50) { PushDownButton(); }
+    }
 }

@@ -116,8 +116,8 @@ public class PuzzleSceneManager : MonoBehaviour
 
     private System.Random rnd = new System.Random();                                         //乱数を生成。
     private CardData c1;
-    public delegate void StatusEffectDelegate();
-    public event StatusEffectDelegate StatusEffect;                                      //状態異常処理を積むevent
+    public List<StatusEffect> statusEffectPlayer = new List<StatusEffect>();
+    public List<StatusEffect> statusEffectEnemy = new List<StatusEffect>();
 
 
     // Use this for initialization
@@ -1235,8 +1235,8 @@ public class PuzzleSceneManager : MonoBehaviour
         }
 
         //状態異常処理
-        StatusEffect();
-
+        for (int x = 0; x < statusEffectPlayer.Count; x++) { if (statusEffectPlayer[x].restTurn > 0) { statusEffectPlayer[x].statusEffectDelegate(); } else { statusEffectPlayer[x].statusEndEffectDelegate(); } statusEffectPlayer[x].restTurn--; }
+        for (int x = 0; x < statusEffectEnemy.Count; x++) { if (statusEffectEnemy[x].restTurn > 0) { statusEffectEnemy[x].statusEffectDelegate(); } else { statusEffectEnemy[x].statusEndEffectDelegate(); } statusEffectEnemy[x].restTurn--; }
         for (l = 0; l < 2; l++)
         {
             followerDamage[l] = 0;//シュジンコウダメージのリセット
