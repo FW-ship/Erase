@@ -125,7 +125,6 @@ public class CardData : MonoBehaviour {
         }
     }
 
-
     //カードリスト
     public void CardList()
     {
@@ -184,8 +183,8 @@ public class CardData : MonoBehaviour {
             cardExplain = "<color=green>テスタ</color>\nコスト：青9　　　　<b><color=black>Ｃ</color></b>\n対戦相手に<b>ターン終了時：１点のライフを失う。\n効果終了時：３点のライフを失う。</b>の状態変化を与える。\n\n<i>私たちはどこから来てどこへ行くのだろう。</i>",
             cardCost = new int[] { 0, 0, 9, 0, 0 },
             cardSkillDelegate = (int player) => {
-                if (player == 0) { p1.statusEffectEnemy.Add(new StatusEffect { cardNum = 7, restTurn = 2,cardExplain="ターン終了時：１点のダメージを受ける。\n効果終了時：３点のダメージを受ける。",statusEffectDelegate=()=> { p1.lifePoint[1]-- ; }, statusEndEffectDelegate = () => { p1.lifePoint[1]-=3; } }); } else {
-                    p1.statusEffectPlayer.Add(new StatusEffect { cardNum = 7, restTurn = 2, cardExplain = "ターン終了時：１点のダメージを受ける。\n効果終了時：３点のダメージを受ける。", statusEffectDelegate = () => { p1.lifePoint[0]--; }, statusEndEffectDelegate = () => { p1.lifePoint[0] -= 3; } });
+                if (player == 0) { p1.statusEffect[1].Add(new StatusEffect { cardNum = 7, restTurn = 2,effectExplain="ターン終了時：１点のダメージを受ける。\n効果終了時：３点のダメージを受ける。",statusEffectDelegate=(p)=> { p1.lifePoint[p]-- ; }, statusEndEffectDelegate = (p) => { p1.lifePoint[p]-=3; } }); } else {
+                    p1.statusEffect[0].Add(new StatusEffect { cardNum = 7, restTurn = 2, effectExplain = "ターン終了時：１点のダメージを受ける。\n効果終了時：３点のダメージを受ける。", statusEffectDelegate = (p) => { p1.lifePoint[p]--; }, statusEndEffectDelegate = (p) => { p1.lifePoint[p] -= 3; } });
                 } },
             cardSpeed = OTHER
         });
@@ -363,15 +362,10 @@ public class Card
 public class StatusEffect
 {
     public int restTurn;//残りターン
-    public int cardNum;//カード画像
-    public string cardExplain;//カード説明文
-    public delegate void StatusEffectDelegate();
+    public int cardNum;//カード画像の番号
+    public string effectExplain;//説明文
+    public delegate void StatusEffectDelegate(int havePlayer);
     public StatusEffectDelegate statusEffectDelegate;//継続効果
     public StatusEffectDelegate statusEndEffectDelegate;//終了時効果
-    // コピーを作成するメソッド
-    public Card Clone()
-    {
-        return (Card)MemberwiseClone();
-    }
 }
 

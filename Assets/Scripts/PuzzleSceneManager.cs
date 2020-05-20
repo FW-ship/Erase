@@ -69,6 +69,7 @@ public class PuzzleSceneManager : MonoBehaviour
     private int timeCount;
     private bool turnEndButtonPush;
     private bool turnProcess;
+    private bool pauseFlag=false;
 
     public bool[] libraryOutFlag = new bool[2];                                //ライブラリアウトが発生したかの判定
     public int chainCount;                                                     //連鎖数
@@ -105,6 +106,9 @@ public class PuzzleSceneManager : MonoBehaviour
     private GameObject[,] objEliminatBlock = new GameObject[WORLD_WIDTH, WORLD_HEIGHT];      //各ブロックの消去時演出用オブジェクト
     private GameObject[,,] objCardMana = new GameObject[2, HAND_NUM, 6];     //カードの残り必要マナ表示
 
+
+    public GameObject objStatusViewCancelButton;
+    public GameObject objStatusEffect;
     public GameObject[,] objCard = new GameObject[2, HAND_NUM];                             //objCardは手札のカードのゲームオブジェクト（描画されるブロック）を代入する配列。
     public Sprite[] brokenBlockSprite=new Sprite[20];
     public GameObject objTurnEndButton;
@@ -116,8 +120,7 @@ public class PuzzleSceneManager : MonoBehaviour
 
     private System.Random rnd = new System.Random();                                         //乱数を生成。
     private CardData c1;
-    public List<StatusEffect> statusEffectPlayer = new List<StatusEffect>();
-    public List<StatusEffect> statusEffectEnemy = new List<StatusEffect>();
+    public List<StatusEffect>[] statusEffect = new List<StatusEffect>[2];
 
 
     // Use this for initialization
@@ -142,7 +145,7 @@ public class PuzzleSceneManager : MonoBehaviour
         while (true)
         {
             //フレームごとに①入力処理とその反応(InputDelete)→②時間経過による動きとその反応(TimeFunc)→③描画(ScreenDraw)の流れを行う。
-            if (winloseFlag == false)//勝ち負け決定したら動かさない。
+            if (!winloseFlag && !pauseFlag)//勝ち負け決定したら動かさない。
             {
                 timeCount++;
                 TimeFunc();
@@ -1235,8 +1238,19 @@ public class PuzzleSceneManager : MonoBehaviour
         }
 
         //状態異常処理
-        for (int x = 0; x < statusEffectPlayer.Count; x++) { if (statusEffectPlayer[x].restTurn > 0) { statusEffectPlayer[x].statusEffectDelegate(); } else { statusEffectPlayer[x].statusEndEffectDelegate(); } statusEffectPlayer[x].restTurn--; }
-        for (int x = 0; x < statusEffectEnemy.Count; x++) { if (statusEffectEnemy[x].restTurn > 0) { statusEffectEnemy[x].statusEffectDelegate(); } else { statusEffectEnemy[x].statusEndEffectDelegate(); } statusEffectEnemy[x].restTurn--; }
+        for (l = 0; l < 2; l++)
+        {
+            //★誰の状態異常なのかをまず表示
+            //for () { yield return null; }
+            //薄暗いRaycastオブジェクトで画面を覆ってゲーム画面に干渉できないようにする。（状態異常イメージの親がコレ。親が移動処理ベース）
+            objStatusEffect.SetActive(true);
+            for (int x = 0; x < statusEffect[l].Count; x++)
+            {
+                if (statusEffect[l][x].restTurn > 0) { statusEffect[l][x].statusEffectDelegate(l); statusEffect[l][x].restTurn--; } else { statusEffect[l][x].statusEndEffectDelegate(l); statusEffect[l].RemoveAt(x); }
+                yield return StartCoroutine(StatusEffectDraw(l, x));
+            }
+            objStatusEffect.SetActive(false);
+        }
         for (l = 0; l < 2; l++)
         {
             followerDamage[l] = 0;//シュジンコウダメージのリセット
@@ -1259,12 +1273,12 @@ public class PuzzleSceneManager : MonoBehaviour
             phaseSkipFlag[i] = false;
         }
 
-        //使ったカード(useCardがtrueになっているカード)は新しく引き直す。
+        //使ったカードと消したカードは新しく引き直す。
         for (l = 0; l < 2; l++)
         {
             for (i = 0; i < HAND_NUM; i++)
             {
-                if (objCard[l, i].GetComponent<Image>().enabled == false)
+                if (objCard[l, i].GetComponent<Image>().enabled == false)//使ったカードも消したカードもこの時点まで来ると表示が消えている
                 {
                     DrawCard(l, i);
                     for (j = 0; j < BLOCKTYPE_NUM + 1; j++) { handCard[l,i].cardMana[j] = 0; }//カードに貯まったマナはリセット
@@ -1565,6 +1579,80 @@ public class PuzzleSceneManager : MonoBehaviour
 
     public void CardPush(int x)
     {
-        objCard[x/10, x%10].GetComponent<Image>().enabled = false;
+        objCard[0, x].GetComponent<Image>().enabled = false;
     }
+
+    public void CharacterPush(int x)
+    {
+        pauseFlag = true;
+        StartCoroutine(StatusEffectView(x));
+    }
+
+    //★未
+    private IEnumerator StatusEffectView(int player)
+    {
+        int effectnum = 0;
+        string explain;
+        Sprite cardsprite;
+        int restturn;
+        int pagenum;
+        explain = statusEffect[player][effectnum].effectExplain;
+        cardsprite = cardImage[statusEffect[player][effectnum].cardNum];
+        restturn = statusEffect[player][effectnum].restTurn;
+        //薄暗いRaycastオブジェクトで画面を覆ってゲーム画面に干渉できないようにする。（状態異常イメージの親がコレ。親が移動処理ベース）
+        objStatusEffect.SetActive(true);
+        objStatusViewCancelButton.SetActive(true);
+        while(pauseFlag){
+            //左右スワイプでページ送り。未。
+            yield return null;
+
+        }
+        objStatusEffect.SetActive(false);
+        objStatusViewCancelButton.SetActive(false);
+    }
+    public void CharacterBackPush()
+    {
+        pauseFlag = false;
+    }
+
+    private IEnumerator StatusEffectDraw(int player,int effectnum)
+    {
+        string explain;
+        Sprite cardsprite;
+        int restturn;
+            explain=statusEffect[player][effectnum].effectExplain;
+            cardsprite = cardImage[statusEffect[player][effectnum].cardNum];
+            restturn = statusEffect[player][effectnum].restTurn;
+
+        objStatusEffect.GetComponentInChildren<Image>().sprite = null;//unity不具合回避
+        objStatusEffect.GetComponentInChildren<Image>().sprite = cardsprite;
+        objStatusEffect.GetComponentsInChildren<Text>()[0].text = explain;
+        objStatusEffect.GetComponentsInChildren<Text>()[1].text = restturn.ToString();
+        //5fで入場
+        for (int i = 0; i < 5; i++)
+        {
+            objStatusEffect.GetComponent<RectTransform>().localPosition = new Vector2(1280 - 1280 / 5 * i, 0);
+        }
+        //50f中央表示
+        for (int i = 0; i < 50; i++)
+        {
+            if (restturn == 0) {
+                //カード画像が点滅しながら消える。
+                float sin=Mathf.Sin((float)i/10);
+                objStatusEffect.GetComponentInChildren<Image>().color = new Color(1,1,1,sin*(50-i)/50);
+            }
+            yield return null;
+        }
+        //5fで退場
+        for (int i = 0; i < 5; i++)
+        {
+            objStatusEffect.GetComponent<RectTransform>().localPosition = new Vector2(-1280 / 5 * i, 0);
+        }
+        objStatusEffect.GetComponent<RectTransform>().localPosition = new Vector2(-1280, 0);
+        objStatusEffect.GetComponentInChildren<Image>().color = new Color(1, 1, 1, 1);
+    }
+
+
+
+
 }
