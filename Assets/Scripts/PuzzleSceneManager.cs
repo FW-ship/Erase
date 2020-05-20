@@ -70,7 +70,9 @@ public class PuzzleSceneManager : MonoBehaviour
     private bool turnEndButtonPush;
     private bool turnProcess;
     private bool pauseFlag=false;
-
+    private int nowPageStatusEffect=1;
+    private int changeStatusEffect = 0;
+    private int statusEffectViewPlayer = 0;
     public bool[] libraryOutFlag = new bool[2];                                //ライブラリアウトが発生したかの判定
     public int chainCount;                                                     //連鎖数
     private int[,] brokenblock = new int[WORLD_WIDTH, WORLD_HEIGHT];            //消去演出中か否か、演出中なら何コマ目(+2)か。
@@ -688,8 +690,8 @@ public class PuzzleSceneManager : MonoBehaviour
                                 block[j, newY] = block[j, i];
                                 blockMoveTime[j, newY] = 0;
                                 block[j, i] = 0;
-                                deleteBlock[j, newY] = deleteBlock[j,i];//★追加
-                                deleteBlock[j, i] = false;//★追加
+                                deleteBlock[j, newY] = deleteBlock[j,i];//追加
+                                deleteBlock[j, i] = false;//追加
                                 blockMoveTime[j, i] = 0;
                                 //移動後に動く余地がなければ即座に固定。
                                 if (newY + 1 >= WORLD_HEIGHT)//移動後のブロックがフィールド下端に達しているか調べる
@@ -729,7 +731,7 @@ public class PuzzleSceneManager : MonoBehaviour
     {
         int i, j, k, l,m,manacalc,manacalccount,nowmanacalc;
         float enoughdark,enoughbright;
-        //★フィールドブロックの描画★
+        //フィールドブロックの描画
         //block[i,j]が０ならimage[i,j]を非表示にする
         for (i = 0; i < WORLD_WIDTH; i++)
         {
@@ -764,7 +766,7 @@ public class PuzzleSceneManager : MonoBehaviour
             }
         }
 
-        //★連鎖中はブロックフィールドを暗くする
+        //連鎖中はブロックフィールドを暗くする
         if (chainCount > 0)
         {
             objBlockField.GetComponent<Image>().color = new Color(0.5f, 0.5f, 0.5f, 1.0f);
@@ -774,7 +776,7 @@ public class PuzzleSceneManager : MonoBehaviour
             objBlockField.GetComponent<Image>().color = new Color(1.0f, 1.0f, 1.0f, 1.0f);
         }
 
-        //★ステータスの描画★
+        //ステータスの描画
         //連鎖数表示
         if (chainCountForDraw != 0 && chainEffectTime < 90)
         {
@@ -804,7 +806,7 @@ public class PuzzleSceneManager : MonoBehaviour
         if (lifePoint[1] >= 10 && lifePoint[1] < 15) { objLifePoint[1].GetComponent<Text>().text = "LP: <color=orange>" + lifePoint[1].ToString() + "</color>"; }
         if (lifePoint[1] < 10) { objLifePoint[1].GetComponent<Text>().text = "LP: <color=red>" + lifePoint[1].ToString() + "</color>"; }
 
-        //★カードの描画★
+        //カードの描画
         for (i = 0; i < 2; i++)
         {
             //手札の描画
@@ -848,7 +850,7 @@ public class PuzzleSceneManager : MonoBehaviour
             objLibrary[i].GetComponentInChildren<Text>().text = libraryNum[i].ToString();
         }
 
-        //★シュジンコウの描画★
+        //シュジンコウの描画
         for (i = 0; i < 2; i++)
         {
                 objFollower[i].gameObject.SetActive(true);
@@ -1584,11 +1586,11 @@ public class PuzzleSceneManager : MonoBehaviour
 
     public void CharacterPush(int x)
     {
+        if (statusEffect[x].Count == 0) { return; }
         pauseFlag = true;
         StartCoroutine(StatusEffectView(x));
     }
 
-    //★未
     private IEnumerator StatusEffectView(int player)
     {
         int effectnum = 0;
@@ -1596,20 +1598,57 @@ public class PuzzleSceneManager : MonoBehaviour
         Sprite cardsprite;
         int restturn;
         int pagenum;
+        int drawPage = 1;
+        nowPageStatusEffect = 1;
+        changeStatusEffect = 0;
         explain = statusEffect[player][effectnum].effectExplain;
         cardsprite = cardImage[statusEffect[player][effectnum].cardNum];
         restturn = statusEffect[player][effectnum].restTurn;
+        pagenum = statusEffect[player].Count;
+        statusEffectViewPlayer = player;
         //薄暗いRaycastオブジェクトで画面を覆ってゲーム画面に干渉できないようにする。（状態異常イメージの親がコレ。親が移動処理ベース）
         objStatusEffect.SetActive(true);
         objStatusViewCancelButton.SetActive(true);
-        while(pauseFlag){
-            //左右スワイプでページ送り。未。
+        objStatusEffect.GetComponentInChildren<Image>().sprite = null;//unity不具合回避
+        objStatusEffect.GetComponentInChildren<Image>().sprite = cardsprite;
+        objStatusEffect.GetComponentsInChildren<Text>()[0].text = explain;
+        objStatusEffect.GetComponentsInChildren<Text>()[1].text = restturn.ToString();
+        objStatusEffect.GetComponentsInChildren<Text>()[1].text = nowPageStatusEffect.ToString() + "/" + pagenum.ToString();
+        while (pauseFlag){
+            if (changeStatusEffect == 5 || changeStatusEffect == -5) {
+                effectnum = nowPageStatusEffect - 1;
+                explain = statusEffect[player][effectnum].effectExplain;
+                cardsprite = cardImage[statusEffect[player][effectnum].cardNum];
+                restturn = statusEffect[player][effectnum].restTurn;
+                objStatusEffect.GetComponentInChildren<Image>().sprite = null;//unity不具合回避
+                objStatusEffect.GetComponentInChildren<Image>().sprite = cardsprite;
+                objStatusEffect.GetComponentsInChildren<Text>()[0].text = explain;
+                objStatusEffect.GetComponentsInChildren<Text>()[1].text = restturn.ToString();
+                objStatusEffect.GetComponentsInChildren<Text>()[1].text = nowPageStatusEffect.ToString() + "/" + pagenum.ToString();
+                if (changeStatusEffect == 5) { changeStatusEffect = -5; } else { changeStatusEffect = 5; }
+            }
+            if (changeStatusEffect == 0) { drawPage = nowPageStatusEffect; }
+            if (nowPageStatusEffect - drawPage > 0) { changeStatusEffect--; } else if(nowPageStatusEffect - drawPage < 0) { changeStatusEffect++; }
+            objStatusEffect.GetComponent<RectTransform>().localPosition = new Vector2(changeStatusEffect * 1280 / 5,0);
             yield return null;
-
         }
         objStatusEffect.SetActive(false);
         objStatusViewCancelButton.SetActive(false);
     }
+    public void StatusEffectPush()
+    {
+        StartCoroutine(StatusEffectSwipe(Input.mousePosition));
+    }
+    public IEnumerator StatusEffectSwipe(Vector3 position)
+    {
+        while (Input.GetMouseButton(0) && Input.mousePosition.x < position.x + 50 && Input.mousePosition.x > position.x - 50)
+        {
+            yield return null;
+        }
+        if (Input.mousePosition.x >= position.x + 50 && nowPageStatusEffect>1) { nowPageStatusEffect--;changeStatusEffect = 1; }
+        if (Input.mousePosition.x <= position.x - 50 && nowPageStatusEffect< statusEffect[statusEffectViewPlayer].Count) { nowPageStatusEffect++;changeStatusEffect = - 1; }
+    }
+
     public void CharacterBackPush()
     {
         pauseFlag = false;
