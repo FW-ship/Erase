@@ -34,7 +34,7 @@ public class CardData : MonoBehaviour {
         {
             card[i].haveCard = 0;
         }
-        if (PlayerPrefs.GetInt("haveCard1", 0) != 0)//初期状態なら
+        if (PlayerPrefs.GetInt("haveCard1", 0) == 0)//初期状態なら
         {
             card[1].haveCard = 3;
             card[2].haveCard = 3;
@@ -339,13 +339,13 @@ public class Card
     const int BLOCKTYPE_NUM = 4;                 //ブロックの色の種類数
     public string cardName;
     public string cardExplain;
-    public int[] cardCost = new int[BLOCKTYPE_NUM];                                                                  //必要なコスト。配列番号はマナ種類
+    public int[] cardCost = new int[BLOCKTYPE_NUM+1];                                                                  //必要なコスト。配列番号はマナ種類
     public int cardSpeed;                                                                 //呪文スピード
     public delegate void CardSkillDelegate(int usePlayer);                                  //特殊効果の関数アドレスを入れるデリゲート
     public CardSkillDelegate cardSkillDelegate;
     public int[,] buff = new int[2,2];                                                           //敵味方への攻守のバフ値
     public int damage;
-    public int[] cardMana = new int[BLOCKTYPE_NUM];
+    public int[] cardMana = new int[BLOCKTYPE_NUM+1];
     public int cardNum;
     public bool useCard;
     public int cardRest;

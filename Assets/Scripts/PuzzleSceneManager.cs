@@ -56,7 +56,7 @@ public class PuzzleSceneManager : MonoBehaviour
     const int OTHER = 10000;                     //第２種呪文において、スキル種別（その他）を表す。
     const int OWN = 1;                           //第１種呪文においてスキル種別（対象：自身のシュジンコウ）を現す。
     const int YOURS = 2;                         //第１種呪文においてスキル種別（対象：相手のシュジンコウ）を現す。
-    const int PACE_BLOCK_MOVE = 40;              //フィールドブロックの落下ペース
+    const int PACE_BLOCK_MOVE = 15;              //フィールドブロックの落下ペース
 
     //変数の宣言
      private int chainCountForDraw;          //チェイン演出用連鎖数（連鎖数リセット後も最後の連鎖の連鎖数はしばらく表示する必要があるため）（-1はブレイク状態を表す）
@@ -87,7 +87,7 @@ public class PuzzleSceneManager : MonoBehaviour
     public int[,] block = new int[WORLD_WIDTH, WORLD_HEIGHT];                  //フィールドの各座標に置かれているブロックの色   
     public bool[,]deleteBlock = new bool[WORLD_WIDTH, WORLD_HEIGHT];
     public Card[,] library = new Card[2,DECKCARD_NUM];
-
+    private bool blockfloat=false;
     private GameObject objMatch;                                                             //通信用ゲームオブジェクト
     private GameObject objEliminatBlockParent;                                               //消去演出用オブジェクトの親オブジェクト
     private GameObject objForNextTurnTime;                                                   //ターンの残り時間のオブジェクトを代入
@@ -122,13 +122,17 @@ public class PuzzleSceneManager : MonoBehaviour
 
     private System.Random rnd = new System.Random();                                         //乱数を生成。
     private CardData c1;
+    Utility u1;
     public List<StatusEffect>[] statusEffect = new List<StatusEffect>[2];
 
 
     // Use this for initialization
     void Start()
     {
+        statusEffect[0] = new List<StatusEffect>();
+        statusEffect[1] = new List<StatusEffect>();
         c1 = GetComponent<CardData>();
+        u1 = GetComponent<Utility>();
         waitCount[0] = 0;
         waitCount[1] = 0;
         StartCoroutine(MainGame());
@@ -177,6 +181,7 @@ public class PuzzleSceneManager : MonoBehaviour
                     seAudioSource[2].PlayOneShot(se[2]);
                     for (int k = j - 1; k >= 0; k--) { if (block[i, k] != 0) { if (block[i,k]<10) { blockMoveTime[i, k] = 0; } block[i, k] = block[i, k] % 10 + 10; } }
                     objTurnEndButton.SetActive(false);
+                    blockfloat = true;
                 }
                 deleteBlock[i,j] = false;
             }
@@ -381,7 +386,7 @@ public class PuzzleSceneManager : MonoBehaviour
     //パズル部の変数の初期化
     private void PuzzleVariableSetting()
     {
-        int i, j, k, l;
+        int i,l;
         lifePoint[0] = MAXPLAYERLIFE;
         lifePoint[1] = MAXENEMYLIFE;
         chainCount = 0;
@@ -410,13 +415,6 @@ public class PuzzleSceneManager : MonoBehaviour
 
         for (i = 0; i < BLOCKTYPE_NUM + 1; i++) { playerEliminatBlockCount[i] = 0; }//iは色と対応させているのでi=0は使わない
 
-        for (k = 0; k < 2; k++)
-        {
-            for (i = 0; i < HAND_NUM; i++)
-            {
-                for (j = 0; j < BLOCKTYPE_NUM + 1; j++) { handCard[k,i].cardMana[j] = 0; }//貯めたマナのリセット
-            }
-        }
         //相手のマナ獲得能力の代入。
         for (i = 1; i < BLOCKTYPE_NUM + 1; i++)
         {
@@ -579,8 +577,10 @@ public class PuzzleSceneManager : MonoBehaviour
         //カードにマナを補充。
         for (i = 0; i < HAND_NUM; i++)
         {//playerCardmanaはプレイヤー(cardManaの１次元が「プレイヤー(0)」である)のカードに貯まっているマナの状況を管理する。２次元(i)が「何番目のカードか(0,1,2)」、３次元(j)が「何色のマナか」を表す。[0,0,2]なら自分の０番目のカードの青マナということ。
-            for (j = 0; j < BLOCKTYPE_NUM + 1; j++) {
-                handCard[0,i].cardMana[j] += playerEliminatBlockCount[j] * chainCount;
+            for (j = 1; j < BLOCKTYPE_NUM + 1; j++) {
+                int l = 1;
+                for (int k = 0; k < chainCount; k++) { l *= chainCount; }
+                handCard[0,i].cardMana[j] += playerEliminatBlockCount[j] * l;
                 if (handCard[0, i].cardMana[j] > handCard[0, i].cardCost[j]) { handCard[0, i].cardMana[0] += handCard[0, i].cardMana[j] - handCard[0, i].cardCost[j]; handCard[0, i].cardMana[j] = handCard[0, i].cardCost[j]; }
             }
         }
@@ -717,7 +717,7 @@ public class PuzzleSceneManager : MonoBehaviour
             };
         }
         if (lockBlock > 0) { seAudioSource[0].PlayOneShot(se[0]); };
-        if (lockBlock == floatBlock) {   if (!CheckEliminatBlock(false)) { chainCount = 0;objTurnEndButton.SetActive(true);  }}
+        if (lockBlock == floatBlock) {   if (!CheckEliminatBlock(false)) { chainCount = 0;objTurnEndButton.SetActive(true); blockfloat = false; }}
         // 終了
         return;
     }
@@ -767,7 +767,7 @@ public class PuzzleSceneManager : MonoBehaviour
         }
 
         //連鎖中はブロックフィールドを暗くする
-        if (chainCount > 0)
+        if (blockfloat)
         {
             objBlockField.GetComponent<Image>().color = new Color(0.5f, 0.5f, 0.5f, 1.0f);
         }
@@ -1093,19 +1093,13 @@ public class PuzzleSceneManager : MonoBehaviour
         CardUse(1);
         
         //第２種呪文フェイズ
-        //２種呪文妨害（２種呪文を妨害する２種呪文(COUNTER)は相互作用を発生させるので、COUNTER同士では影響を与えない効果に＋他呪文と隔離。この種別だけはフェイズスキップも無視する）
+        //呪文妨害（呪文を妨害する呪文(COUNTER)は相互作用を発生させるので、COUNTER同士では影響を与えない効果に＋他呪文と隔離。この種別だけはフェイズスキップも無視する）
         yield return StartCoroutine(Spell2Func(COUNTER));
-
+        yield return StartCoroutine(Spell2Func(COUNTER));
         if (phaseSkipFlag[0] == false)
         {
-            //２種召喚（召喚は他呪文との相互作用（ダメージ処理や強化等）が発生するので先行処理する）
-            yield return StartCoroutine(Spell2Func(SUMMON));
-            //デッキ削り（デッキに作用する効果は相互作用を起こすので効果ごとに処理を分ける）
-            yield return StartCoroutine(Spell2Func(DECK_EAT));
-            //手札入れ替え
-            yield return StartCoroutine(Spell2Func(HAND_CHANGE));
-            //その他の２種呪文
-            yield return StartCoroutine(Spell2Func(OTHER));
+            //カウンター呪文実装したらこっちにメイン処理を置く。
+
             LifePointCheck();
         }
         else
@@ -1245,9 +1239,9 @@ public class PuzzleSceneManager : MonoBehaviour
             //★誰の状態異常なのかをまず表示
             //for () { yield return null; }
             //薄暗いRaycastオブジェクトで画面を覆ってゲーム画面に干渉できないようにする。（状態異常イメージの親がコレ。親が移動処理ベース）
-            objStatusEffect.SetActive(true);
-            for (int x = 0; x < statusEffect[l].Count; x++)
+            for (int x = 0; x<statusEffect[l].Count; x++)
             {
+                objStatusEffect.SetActive(true);
                 if (statusEffect[l][x].restTurn > 0) { statusEffect[l][x].statusEffectDelegate(l); statusEffect[l][x].restTurn--; } else { statusEffect[l][x].statusEndEffectDelegate(l); statusEffect[l].RemoveAt(x); }
                 yield return StartCoroutine(StatusEffectDraw(l, x));
             }
@@ -1576,6 +1570,7 @@ public class PuzzleSceneManager : MonoBehaviour
 
     public void BlockPush(int x)
     {
+        if (blockfloat) { return; }
             deleteBlock[x / 10, x % 10] = true;
     }
 
@@ -1586,9 +1581,30 @@ public class PuzzleSceneManager : MonoBehaviour
 
     public void CharacterPush(int x)
     {
-        if (statusEffect[x].Count == 0) { return; }
         pauseFlag = true;
+        if (statusEffect[x].Count == 0) { StartCoroutine(NoStatusEffectView(x)); return; }
+        u1.flick = 0;
         StartCoroutine(StatusEffectView(x));
+    }
+    private IEnumerator NoStatusEffectView(int player)
+    {
+        objStatusEffect.SetActive(true);
+        objStatusViewCancelButton.SetActive(true);
+        objStatusEffect.GetComponentsInChildren<Image>()[1].sprite = null;
+        objStatusEffect.GetComponentsInChildren<Image>()[1].color=new Color(1,1,1,0);
+        objStatusEffect.GetComponentsInChildren<Image>()[2].sprite = null;
+        objStatusEffect.GetComponentsInChildren<Image>()[2].sprite = objFollower[player].GetComponent<Image>().sprite;
+        objStatusEffect.GetComponentsInChildren<Text>()[0].text = "<size=48>状態異常はありません</size>";
+        objStatusEffect.GetComponentsInChildren<Text>()[1].text = "";
+        objStatusEffect.GetComponentsInChildren<Text>()[2].text = "0/0";
+        while (pauseFlag)
+        {
+            yield return null;
+        }
+        objStatusEffect.GetComponentsInChildren<Image>()[1].color = new Color(1, 1, 1, 1);
+
+        objStatusEffect.SetActive(false);
+        objStatusViewCancelButton.SetActive(false);
     }
 
     private IEnumerator StatusEffectView(int player)
@@ -1609,22 +1625,26 @@ public class PuzzleSceneManager : MonoBehaviour
         //薄暗いRaycastオブジェクトで画面を覆ってゲーム画面に干渉できないようにする。（状態異常イメージの親がコレ。親が移動処理ベース）
         objStatusEffect.SetActive(true);
         objStatusViewCancelButton.SetActive(true);
-        objStatusEffect.GetComponentInChildren<Image>().sprite = null;//unity不具合回避
-        objStatusEffect.GetComponentInChildren<Image>().sprite = cardsprite;
+
+        objStatusEffect.GetComponentsInChildren<Image>()[1].sprite = null;//unity不具合回避
+        objStatusEffect.GetComponentsInChildren<Image>()[1].sprite = cardsprite;
+        objStatusEffect.GetComponentsInChildren<Image>()[2].sprite = null;
+        objStatusEffect.GetComponentsInChildren<Image>()[2].sprite = objFollower[player].GetComponent<Image>().sprite;
         objStatusEffect.GetComponentsInChildren<Text>()[0].text = explain;
         objStatusEffect.GetComponentsInChildren<Text>()[1].text = restturn.ToString();
-        objStatusEffect.GetComponentsInChildren<Text>()[1].text = nowPageStatusEffect.ToString() + "/" + pagenum.ToString();
+        objStatusEffect.GetComponentsInChildren<Text>()[2].text = nowPageStatusEffect.ToString() + "/" + pagenum.ToString();
         while (pauseFlag){
+            if (u1.flick==1 && nowPageStatusEffect < statusEffect[statusEffectViewPlayer].Count) { nowPageStatusEffect++; changeStatusEffect = -1; } else if (u1.flick==-1 && nowPageStatusEffect > 1) { nowPageStatusEffect--; changeStatusEffect = 1; }
             if (changeStatusEffect == 5 || changeStatusEffect == -5) {
                 effectnum = nowPageStatusEffect - 1;
                 explain = statusEffect[player][effectnum].effectExplain;
                 cardsprite = cardImage[statusEffect[player][effectnum].cardNum];
                 restturn = statusEffect[player][effectnum].restTurn;
-                objStatusEffect.GetComponentInChildren<Image>().sprite = null;//unity不具合回避
-                objStatusEffect.GetComponentInChildren<Image>().sprite = cardsprite;
+                objStatusEffect.GetComponentsInChildren<Image>()[1].sprite = null;//unity不具合回避
+                objStatusEffect.GetComponentsInChildren<Image>()[1].sprite = cardsprite;
                 objStatusEffect.GetComponentsInChildren<Text>()[0].text = explain;
                 objStatusEffect.GetComponentsInChildren<Text>()[1].text = restturn.ToString();
-                objStatusEffect.GetComponentsInChildren<Text>()[1].text = nowPageStatusEffect.ToString() + "/" + pagenum.ToString();
+                objStatusEffect.GetComponentsInChildren<Text>()[2].text = nowPageStatusEffect.ToString() + "/" + pagenum.ToString();
                 if (changeStatusEffect == 5) { changeStatusEffect = -5; } else { changeStatusEffect = 5; }
             }
             if (changeStatusEffect == 0) { drawPage = nowPageStatusEffect; }
@@ -1634,19 +1654,6 @@ public class PuzzleSceneManager : MonoBehaviour
         }
         objStatusEffect.SetActive(false);
         objStatusViewCancelButton.SetActive(false);
-    }
-    public void StatusEffectPush()
-    {
-        StartCoroutine(StatusEffectSwipe(Input.mousePosition));
-    }
-    public IEnumerator StatusEffectSwipe(Vector3 position)
-    {
-        while (Input.GetMouseButton(0) && Input.mousePosition.x < position.x + 50 && Input.mousePosition.x > position.x - 50)
-        {
-            yield return null;
-        }
-        if (Input.mousePosition.x >= position.x + 50 && nowPageStatusEffect>1) { nowPageStatusEffect--;changeStatusEffect = 1; }
-        if (Input.mousePosition.x <= position.x - 50 && nowPageStatusEffect< statusEffect[statusEffectViewPlayer].Count) { nowPageStatusEffect++;changeStatusEffect = - 1; }
     }
 
     public void CharacterBackPush()
@@ -1663,32 +1670,38 @@ public class PuzzleSceneManager : MonoBehaviour
             cardsprite = cardImage[statusEffect[player][effectnum].cardNum];
             restturn = statusEffect[player][effectnum].restTurn;
 
-        objStatusEffect.GetComponentInChildren<Image>().sprite = null;//unity不具合回避
-        objStatusEffect.GetComponentInChildren<Image>().sprite = cardsprite;
+        objStatusEffect.GetComponentsInChildren<Image>()[1].sprite = null;//unity不具合回避
+        objStatusEffect.GetComponentsInChildren<Image>()[1].sprite = cardsprite;
+        objStatusEffect.GetComponentsInChildren<Image>()[2].sprite = null;
+        objStatusEffect.GetComponentsInChildren<Image>()[2].sprite = objFollower[player].GetComponent<Image>().sprite;
         objStatusEffect.GetComponentsInChildren<Text>()[0].text = explain;
         objStatusEffect.GetComponentsInChildren<Text>()[1].text = restturn.ToString();
+        objStatusEffect.GetComponentsInChildren<Text>()[2].text = (effectnum+1).ToString() + "/" + statusEffect[player].Count.ToString();
         //5fで入場
         for (int i = 0; i < 5; i++)
         {
-            objStatusEffect.GetComponent<RectTransform>().localPosition = new Vector2(1280 - 1280 / 5 * i, 0);
+            objStatusEffect.GetComponent<RectTransform>().localPosition = new Vector2(1280 - 128*2 * i, 0);
+            yield return null;
         }
         //50f中央表示
         for (int i = 0; i < 50; i++)
         {
+            objStatusEffect.GetComponent<RectTransform>().localPosition = new Vector2(0, 0);
             if (restturn == 0) {
                 //カード画像が点滅しながら消える。
                 float sin=Mathf.Sin((float)i/10);
-                objStatusEffect.GetComponentInChildren<Image>().color = new Color(1,1,1,sin*(50-i)/50);
+                objStatusEffect.GetComponentsInChildren<Image>()[1].color = new Color(1,1,1,sin*(50-i)/50);
             }
             yield return null;
         }
         //5fで退場
         for (int i = 0; i < 5; i++)
         {
-            objStatusEffect.GetComponent<RectTransform>().localPosition = new Vector2(-1280 / 5 * i, 0);
+            objStatusEffect.GetComponent<RectTransform>().localPosition = new Vector2(-128*2 * i, 0);
+            yield return null;
         }
         objStatusEffect.GetComponent<RectTransform>().localPosition = new Vector2(-1280, 0);
-        objStatusEffect.GetComponentInChildren<Image>().color = new Color(1, 1, 1, 1);
+        objStatusEffect.GetComponentsInChildren<Image>()[1].color = new Color(1, 1, 1, 1);
     }
 
 

@@ -31,12 +31,7 @@ public class TitleManager : MonoBehaviour
 
     public void PushStartButton()
     {
-        if (PlayerPrefs.GetInt("maxScenarioCount", 0) == 0)//初回スタートならシナリオからスタート
-        {
-            GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "StoryScene");
-        }else{//２回目以降ならシーン選択からスタート
             GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "SelectScene");
-        }
     }
 
     public void PushGuideButton()

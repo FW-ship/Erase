@@ -103,7 +103,7 @@ public class Scenario : MonoBehaviour {
         objBookHolder.SetActive(false);
         //シナリオコルーチンの実行
         ReadText(PlayerPrefs.GetString("ScenarioName"));
-        CardData c1 = GetComponent<CardData>();
+        c1 = GetComponent<CardData>();
         StartCoroutine(ScenarioPlay());
     }
     

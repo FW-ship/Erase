@@ -25,15 +25,18 @@ public class MakeBookSceneManager : MonoBehaviour {
     public int cardPage;                                                                  //カード一覧の現在のページ数
     public Sprite[] bookImage = new Sprite[10];
     public bool[] manaSort = new bool[BLOCKTYPE_NUM+1];
+    private bool flickon;
     CardData c1;
+    Utility u1;
 
 
     // Use this for initialization
     void Start () {
         int i;
         c1 = GetComponent<CardData>();
+        u1 = GetComponent<Utility>();
         //BGM読み込みと再生
-        GetComponent<Utility>().BGMPlay(Resources.Load<AudioClip>("ソウルトゥーレディオ"));
+        u1.BGMPlay(Resources.Load<AudioClip>("ソウルトゥーレディオ"));
 
         //所持カードとデッキのロード
 
@@ -247,14 +250,17 @@ public class MakeBookSceneManager : MonoBehaviour {
 
     public void SourcebookPush()
     {
+        if (flickon) { return; }
+        flickon = true;
         StartCoroutine(SourcebookSwipe(Input.mousePosition));
     }
-    public IEnumerator SourcebookSwipe(Vector3 position)
+    private IEnumerator SourcebookSwipe(Vector3 position)
     {
-        while (Input.GetMouseButton(0) && Input.mousePosition.x <position.x+50 && Input.mousePosition.x > position.x - 50) {
+        while (u1.flick==0) {
             yield return null;
         }
-        if (Input.mousePosition.x >= position.x + 50) { PushUpButton(); }
-        if (Input.mousePosition.x <= position.x - 50) { PushDownButton(); }
+        if (u1.flick==-1) { PushUpButton(); }
+        if (u1.flick==1) { PushDownButton(); }
+        flickon=false;
     }
 }

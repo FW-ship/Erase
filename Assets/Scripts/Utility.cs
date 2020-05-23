@@ -9,6 +9,9 @@ public class Utility : MonoBehaviour {
     private bool fadeFlag;                                      //フェードイン・フェードアウト中か否か
     public bool pushObjectFlag;                                 //ボタンオブジェクトのタップ(true)か画面自体（ストーリー進行）のタップ(false)かの判定
     public bool selectFlag;                                     //選択待ち中、どれかが選択されたか否かの判定
+    private float touchStartPos;
+    private float touchEndPos;
+    public int flick;
 
     // Use this for initialization
     void Start () {
@@ -19,7 +22,7 @@ public class Utility : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-		
+        Flick();
 	}
 
 
@@ -137,5 +140,40 @@ public class Utility : MonoBehaviour {
         yield return new WaitForSeconds(waitTime);
         Application.OpenURL(URL);
     }
+
+    void Flick()
+    {
+        if (Input.GetKeyDown(KeyCode.Mouse0))
+        {
+            touchStartPos = Input.mousePosition.x;
+        }
+
+        if (Input.GetKeyUp(KeyCode.Mouse0))
+        {
+            touchEndPos = Input.mousePosition.x;
+            flick = GetDirection();
+        }
+        else {
+            flick = 0;
+        }
+    }
+    int GetDirection()
+    {
+        float directionX = touchEndPos - touchStartPos;
+
+
+        if (30 < directionX)
+        {
+            //右向きにフリック
+            return -1;
+        }
+        else if (-30 > directionX)
+        {
+            //左向きにフリック
+            return 1;
+        }
+        return -100;//ただのタップ
+    }
+
 
 }
