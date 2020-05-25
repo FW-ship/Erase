@@ -151,7 +151,7 @@ public class PuzzleSceneManager : MonoBehaviour
         while (true)
         {
             //フレームごとに①入力処理とその反応(InputDelete)→②時間経過による動きとその反応(TimeFunc)→③描画(ScreenDraw)の流れを行う。
-            if (!winloseFlag && !pauseFlag)//勝ち負け決定したら動かさない。
+            if (!winloseFlag)//勝ち負け決定したら動かさない。
             {
                 timeCount++;
                 TimeFunc();
@@ -1059,14 +1059,14 @@ public class PuzzleSceneManager : MonoBehaviour
     }
 
     //２種呪文の処理関数
-    private IEnumerator Spell2Func(int skill)
+    private IEnumerator Spell2Func()
     {
         int i, l;
         for (l = 0; l < 2; l++)
         {
             for (i = 0; i < HAND_NUM; i++)
             {
-                if (handCard[l,i].useCard == true && handCard[l,i].cardSkillDelegate!=null)                    //使用確定カードで２種カウンターなら発動。
+                if (objCard[l, i].GetComponent<Image>().enabled && handCard[l,i].useCard == true && handCard[l,i].cardSkillDelegate!=null)                    //使用確定カードで２種なら発動。
                 {
                     objCard[l, i].GetComponent<Image>().enabled = false;//使用したら非表示
                     seAudioSource[11].PlayOneShot(se[11]);
@@ -1082,6 +1082,8 @@ public class PuzzleSceneManager : MonoBehaviour
     private IEnumerator TurnFunc()
     {
         int i, l;
+        objStatusEffect.SetActive(true);
+        objStatusEffect.GetComponent<RectTransform>().localPosition = new Vector2(-1280, 0);
         turnEndButtonPush = false;
         turnProcess = true;
         //第２種（特殊効果）呪文フェイズ→第１種（強化）呪文フェイズ→第３種（ダメージ）呪文フェイズ→シュジンコウ攻撃フェイズ→第０種（召喚呪文）フェイズの順で処理される。
@@ -1094,12 +1096,10 @@ public class PuzzleSceneManager : MonoBehaviour
         
         //第２種呪文フェイズ
         //呪文妨害（呪文を妨害する呪文(COUNTER)は相互作用を発生させるので、COUNTER同士では影響を与えない効果に＋他呪文と隔離。この種別だけはフェイズスキップも無視する）
-        yield return StartCoroutine(Spell2Func(COUNTER));
-        yield return StartCoroutine(Spell2Func(COUNTER));
+
         if (phaseSkipFlag[0] == false)
         {
-            //カウンター呪文実装したらこっちにメイン処理を置く。
-
+            yield return StartCoroutine(Spell2Func());
             LifePointCheck();
         }
         else
@@ -1109,7 +1109,7 @@ public class PuzzleSceneManager : MonoBehaviour
             {
                 for (i = 0; i < HAND_NUM; i++)
                 {
-                    if (handCard[l,i].useCard == true && handCard[l, i].cardSkillDelegate != null)                    //使用確定カードで第二種呪文なら演出。
+                    if (objCard[l, i].GetComponent<Image>().enabled && handCard[l,i].useCard == true && handCard[l, i].cardSkillDelegate != null)                    //使用確定カードで第二種呪文なら演出。
                     {
                         objCard[l, i].GetComponent<Image>().enabled = false;//使用したら非表示
                         StartCoroutine(SpellMiss(l));//詠唱失敗演出を詠唱演出に重ねる。
@@ -1127,7 +1127,7 @@ public class PuzzleSceneManager : MonoBehaviour
             {
                 for (i = 0; i < HAND_NUM; i++)
                 {
-                    if (handCard[l,i].useCard == true && (handCard[l, i].buff[0,0]!=0 || handCard[l, i].buff[0, 1] != 0 || handCard[l, i].buff[1, 0] != 0 || handCard[l, i].buff[1, 1] != 0))                    //使用確定カードで第一種呪文なら発動。
+                    if (objCard[l, i].GetComponent<Image>().enabled && handCard[l,i].useCard == true && (handCard[l, i].buff[0,0]!=0 || handCard[l, i].buff[0, 1] != 0 || handCard[l, i].buff[1, 0] != 0 || handCard[l, i].buff[1, 1] != 0))                    //使用確定カードで第一種呪文なら発動。
                     {
                         objCard[l, i].GetComponent<Image>().enabled = false;//使用したら非表示
                         yield return StartCoroutine(SpellEffect(l, i));//呪文演出
@@ -1166,7 +1166,7 @@ public class PuzzleSceneManager : MonoBehaviour
             {
                 for (i = 0; i < HAND_NUM; i++)
                 {
-                    if (handCard[l, i].useCard == true && (handCard[l, i].buff[0, 0] != 0 || handCard[l, i].buff[0, 1] != 0 || handCard[l, i].buff[1, 0] != 0 || handCard[l, i].buff[1, 1] != 0))                    //使用確定カードで第一種呪文なら演出。
+                    if (objCard[l, i].GetComponent<Image>().enabled && handCard[l, i].useCard == true && (handCard[l, i].buff[0, 0] != 0 || handCard[l, i].buff[0, 1] != 0 || handCard[l, i].buff[1, 0] != 0 || handCard[l, i].buff[1, 1] != 0))                    //使用確定カードで第一種呪文なら演出。
                     {
                         objCard[l, i].GetComponent<Image>().enabled = false;//使用したら非表示
                         StartCoroutine(SpellMiss(l));//詠唱失敗演出を詠唱演出に重ねる。
@@ -1184,7 +1184,7 @@ public class PuzzleSceneManager : MonoBehaviour
             {
                 for (i = 0; i < HAND_NUM; i++)
                 {
-                    if (handCard[l, i].useCard == true && handCard[l,i].damage>0)                    //使用確定カードで三種呪文なら発動。
+                    if (objCard[l, i].GetComponent<Image>().enabled && handCard[l, i].useCard == true && handCard[l,i].damage>0)                    //使用確定カードで三種呪文なら発動。
                     {
                         objCard[l, i].GetComponent<Image>().enabled = false;//使用したら非表示
                         yield return StartCoroutine(SpellEffect(l, i));//呪文演出
@@ -1204,7 +1204,7 @@ public class PuzzleSceneManager : MonoBehaviour
             {
                 for (i = 0; i < HAND_NUM; i++)
                 {
-                    if (handCard[l, i].useCard == true && handCard[l, i].damage > 0)                    //使用確定カードで第三種呪文なら演出。
+                    if (objCard[l, i].GetComponent<Image>().enabled && handCard[l, i].useCard == true && handCard[l, i].damage > 0)                    //使用確定カードで第三種呪文なら演出。
                     {
                         objCard[l, i].GetComponent<Image>().enabled = false;//使用したら非表示
                         StartCoroutine(SpellMiss(l));//詠唱失敗演出を詠唱演出に重ねる。
@@ -1236,16 +1236,17 @@ public class PuzzleSceneManager : MonoBehaviour
         //状態異常処理
         for (l = 0; l < 2; l++)
         {
-            //★誰の状態異常なのかをまず表示
-            //for () { yield return null; }
-            //薄暗いRaycastオブジェクトで画面を覆ってゲーム画面に干渉できないようにする。（状態異常イメージの親がコレ。親が移動処理ベース）
+            List<int> tmp = new List<int>();
+            bool tmpflag=false;
             for (int x = 0; x<statusEffect[l].Count; x++)
             {
+                tmpflag = true;
                 objStatusEffect.SetActive(true);
-                if (statusEffect[l][x].restTurn > 0) { statusEffect[l][x].statusEffectDelegate(l); statusEffect[l][x].restTurn--; } else { statusEffect[l][x].statusEndEffectDelegate(l); statusEffect[l].RemoveAt(x); }
+                if (statusEffect[l][x].restTurn > 0) { statusEffect[l][x].statusEffectDelegate(l); statusEffect[l][x].restTurn--; } else { statusEffect[l][x].statusEndEffectDelegate(l); tmp.Add(x); }
                 yield return StartCoroutine(StatusEffectDraw(l, x));
             }
-            objStatusEffect.SetActive(false);
+            for (int x = 0; x < tmp.Count; x++) { statusEffect[l].RemoveAt(tmp[x]); }
+            if (tmpflag && l==0) { for (int x = 0; x < 50; x++) { yield return null; } }
         }
         for (l = 0; l < 2; l++)
         {
@@ -1257,6 +1258,7 @@ public class PuzzleSceneManager : MonoBehaviour
         //通信対戦時の同期待ち（cardManaデータを一致させる）
         yield return StartCoroutine(WaitMatchData(300));//300フレームまで同期遅れを許容
         turnProcess = false;
+        objStatusEffect.SetActive(false);
     }
 
     private void TurnEnd()
@@ -1352,82 +1354,33 @@ public class PuzzleSceneManager : MonoBehaviour
     //キャラクターカットイン（呪文名表示）
     public IEnumerator SpellEffect(int player, int hand)//playerがＰＬエネミー、handが手札の何枚目か。
     {
-        /*
-        int i;
-        cutInRunning = true;
-        objCutIn[player].GetComponent<Image>().enabled = true;
-
-        if (player == 0) { objCutIn[player].GetComponentInChildren<Text>().text += "<color=red>"; }
-        if (player == 1) { objCutIn[player].GetComponentInChildren<Text>().text += "<color=blue>"; }
-        if (hand < 3)
+        objStatusEffect.GetComponentsInChildren<Image>()[1].sprite = null;//unity不具合回避
+        objStatusEffect.GetComponentsInChildren<Image>()[1].sprite = cardImage[handCard[player, hand].cardNum];
+        objStatusEffect.GetComponentsInChildren<Image>()[2].sprite = null;
+        objStatusEffect.GetComponentsInChildren<Image>()[2].sprite = objFollower[player].GetComponent<Image>().sprite;
+        objStatusEffect.GetComponentsInChildren<Text>()[0].text = handCard[player, hand].cardExplain;
+        objStatusEffect.GetComponentsInChildren<Text>()[1].text = "";
+        objStatusEffect.GetComponentsInChildren<Text>()[2].text = "";
+        for (int i = 0; i < 5; i++)
         {
-            objCutIn[player].GetComponentInChildren<Text>().text += c1.cardName[handCard[player, hand]];
-            string[] explainList = c1.cardExplain[handCard[player, hand]].Split('\n');
-            objCutIn[player].GetComponentInChildren<Text>().text += "\n<size=24>";
-            objCutIn[player].GetComponentInChildren<Text>().text += explainList[2];
-            objCutIn[player].GetComponentInChildren<Text>().text += "</size>";
-        }//通常handは３未満。
-        objCutIn[player].GetComponentInChildren<Text>().text += "</color>";
-
-        for (i = 0; i < 10; i++)
-        {
-            if (player == 0) { objCutIn[player].GetComponent<RectTransform>().localPosition = new Vector3(PLAYER_SPELL_POSITION_X - 500 + 50 * i, PLAYER_SPELL_POSITION_Y, 0); }
-            if (player == 1) { objCutIn[player].GetComponent<RectTransform>().localPosition = new Vector3(ENEMY_SPELL_POSITION_X + 500 - 50 * i, ENEMY_SPELL_POSITION_Y, 0); }
+            objStatusEffect.GetComponent<RectTransform>().localPosition = new Vector2(i * 1280 / 5 -1280, 0);
             yield return null;
         }
-        if (player == 0) { objCutIn[player].GetComponent<RectTransform>().localPosition = new Vector3(PLAYER_SPELL_POSITION_X, PLAYER_SPELL_POSITION_Y, 0); }//出てきたら位置を固定
-        if (player == 1) { objCutIn[player].GetComponent<RectTransform>().localPosition = new Vector3(ENEMY_SPELL_POSITION_X, ENEMY_SPELL_POSITION_Y, 0); }
-        for (i = 0; i < SPELL_TIME - 10; i++)//そのまま演出の残り時間を待つ。（SpellMissと同時並行でコルーチンを回している場合は、ここのループの間にSpellMiss側でobjcutinに変更を加える）
-        {
+        objStatusEffect.GetComponent<RectTransform>().localPosition = new Vector2(0, 0);
+        seAudioSource[6].PlayOneShot(se[6]);
+        for (int i = 0; i < 200; i++) {
+            //呪文詠唱演出（詠唱アニメーション＋効果音。ついでに背景も変えたい。）
+            objStatusEffect.GetComponentsInChildren<RectTransform>()[1].sizeDelta = new Vector2(135+135*Mathf.Sin(i/3),360);
             yield return null;
         }
-        if (player == 0) { objCutIn[player].GetComponent<RectTransform>().localPosition = new Vector3(PLAYER_SPELL_POSITION_X - 500, PLAYER_SPELL_POSITION_Y, 0); }
-        if (player == 1) { objCutIn[player].GetComponent<RectTransform>().localPosition = new Vector3(ENEMY_SPELL_POSITION_X + 500, ENEMY_SPELL_POSITION_Y, 0); }
-        objCutIn[player].GetComponentInChildren<Text>().text = "";
-        objCutIn[player].GetComponent<Image>().enabled = false;
-        cutInRunning = false;
-        */
-        yield return null;
+        objStatusEffect.GetComponentsInChildren<RectTransform>()[1].sizeDelta = new Vector2(270, 360);
+        for (int i = 0; i < 5; i++)
+        {
+            objStatusEffect.GetComponent<RectTransform>().localPosition = new Vector2(i * 1280 / 5, 0);
+            yield return null;
+        }
+        objStatusEffect.GetComponent<RectTransform>().localPosition = new Vector2(1280, 0);
     }
-
-    //シュジンコウ常在効果のカットイン
-    public IEnumerator FollowerSkillCutIn(int player, string name, string explain)//playerがＰＬエネミー、nameが能力名、explainが能力説明
-    {
-        int i;
-        cutInRunning = true;
-        objCutIn[player].GetComponent<Image>().enabled = true;
-
-        if (player == 0) { objCutIn[player].GetComponentInChildren<Text>().text += "<color=red>"; }
-        if (player == 1) { objCutIn[player].GetComponentInChildren<Text>().text += "<color=blue>"; }
-        objCutIn[player].GetComponentInChildren<Text>().text += "<size=36>";
-        objCutIn[player].GetComponentInChildren<Text>().text += name;
-        objCutIn[player].GetComponentInChildren<Text>().text += "</size>";
-        objCutIn[player].GetComponentInChildren<Text>().text += "\n<size=16>";
-        objCutIn[player].GetComponentInChildren<Text>().text += explain;
-        objCutIn[player].GetComponentInChildren<Text>().text += "</size>";
-        objCutIn[player].GetComponentInChildren<Text>().text += "</color>";
-
-        for (i = 0; i < 10; i++)
-        {
-            if (player == 0) { objCutIn[player].GetComponent<RectTransform>().localPosition = new Vector3(PLAYER_SPELL_POSITION_X - 500 + 50 * i, PLAYER_SPELL_POSITION_Y, 0); }
-            if (player == 1) { objCutIn[player].GetComponent<RectTransform>().localPosition = new Vector3(ENEMY_SPELL_POSITION_X + 500 - 50 * i, ENEMY_SPELL_POSITION_Y, 0); }
-            yield return null;
-        }
-        if (player == 0) { objCutIn[player].GetComponent<RectTransform>().localPosition = new Vector3(PLAYER_SPELL_POSITION_X, PLAYER_SPELL_POSITION_Y, 0); }//出てきたら位置を固定
-        if (player == 1) { objCutIn[player].GetComponent<RectTransform>().localPosition = new Vector3(ENEMY_SPELL_POSITION_X, ENEMY_SPELL_POSITION_Y, 0); }
-        for (i = 0; i < SPELL_TIME - 10; i++)//そのまま演出の残り時間を待つ。（SpellMissと同時並行でコルーチンを回している場合は、ここのループの間にSpellMiss側でobjcutinに変更を加える）
-        {
-            yield return null;
-        }
-        if (player == 0) { objCutIn[player].GetComponent<RectTransform>().localPosition = new Vector3(PLAYER_SPELL_POSITION_X - 500, PLAYER_SPELL_POSITION_Y, 0); }
-        if (player == 1) { objCutIn[player].GetComponent<RectTransform>().localPosition = new Vector3(ENEMY_SPELL_POSITION_X + 500, ENEMY_SPELL_POSITION_Y, 0); }
-        objCutIn[player].GetComponentInChildren<Text>().text = "";
-        objCutIn[player].GetComponent<Image>().enabled = false;
-        cutInRunning = false;
-    }
-
-
-
 
     //シュジンコウダメージ演出
     //シュジンコウを揺らす。
@@ -1441,8 +1394,6 @@ public class PuzzleSceneManager : MonoBehaviour
             yield return null;
         }
     }
-
-
 
     //プレイヤー(player==0)orエネミー(player==1)ダメージ演出
     //ＬＰ表示欄を揺らす
