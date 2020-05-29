@@ -108,18 +108,17 @@ public class PuzzleSceneManager : MonoBehaviour
     private GameObject[,] objEliminatBlock = new GameObject[WORLD_WIDTH, WORLD_HEIGHT];      //各ブロックの消去時演出用オブジェクト
     private GameObject[,,] objCardMana = new GameObject[2, HAND_NUM, 6];     //カードの残り必要マナ表示
 
-
     public GameObject objStatusViewCancelButton;
     public GameObject objStatusEffect;
     public GameObject[,] objCard = new GameObject[2, HAND_NUM];                             //objCardは手札のカードのゲームオブジェクト（描画されるブロック）を代入する配列。
     public Sprite[] brokenBlockSprite=new Sprite[20];
     public GameObject objTurnEndButton;
-
+    public GameObject objSpellback;
     public List<AudioSource> seAudioSource = new List<AudioSource>();                      //効果音のオーディオソース（音程変更等で効果音ごとに触るので各効果音ごとに取得）
     public List<AudioClip> se = new List<AudioClip>();                                     //効果音のオーディオクリップ
     private List<Sprite> cardImage = new List<Sprite>();                                   //カードの画像（配列は全種類分だが、実際にロードするのは使用する分のみ）
     private List<Sprite> followerImage = new List<Sprite>();                               //シュジンコウの画像（配列は全種類分だが、実際にロードするのは使用する分のみ）
-
+    private Sprite[] spellback = new Sprite[20];
     private System.Random rnd = new System.Random();                                         //乱数を生成。
     private CardData c1;
     Utility u1;
@@ -371,7 +370,11 @@ public class PuzzleSceneManager : MonoBehaviour
                 }
             }
         }
-
+        for (int x = 0; x < 20; x++)
+        {
+            if (x < 10) { spellback[x]=Resources.Load<Sprite>("spellback_010" + x.ToString()); }
+            else{ spellback[x]=Resources.Load<Sprite>("spellback_01" + x.ToString()); }
+        }
         objFollower[0].GetComponent<Image>().sprite = null;//unity不具合回避
         objFollower[1].GetComponent<Image>().sprite = null;//unity不具合回避
         objFollower[0].GetComponent<Image>().sprite= Resources.Load<Sprite>("character50");
@@ -1078,6 +1081,30 @@ public class PuzzleSceneManager : MonoBehaviour
         }
     }
 
+    private IEnumerator SpellbackDraw()
+    {
+
+        objSpellback.GetComponent<Image>().sprite = null;
+        objSpellback.GetComponent<Image>().sprite = spellback[0];
+        for (int j = 0; j < 5; j++)
+        {
+            yield return null;
+        }
+            for (int i = 0; i < 20; i++)
+            {
+                objSpellback.GetComponent<Image>().sprite = null;
+                objSpellback.GetComponent<Image>().sprite = spellback[i];
+                for (int j = 0; j < 5; j++) { yield return null;
+                }
+            }
+        for (int j = 0; j < 5; j++)
+        {
+            yield return null;
+        }
+        
+    }
+
+
     //ターン処理関数
     private IEnumerator TurnFunc()
     {
@@ -1093,9 +1120,10 @@ public class PuzzleSceneManager : MonoBehaviour
         yield return StartCoroutine(WaitMatchData(300));//300フレームまで同期遅れを許容
         //使用カードの確定（相手）
         CardUse(1);
-        
+        objSpellback.SetActive(true);
         //第２種呪文フェイズ
         //呪文妨害（呪文を妨害する呪文(COUNTER)は相互作用を発生させるので、COUNTER同士では影響を与えない効果に＋他呪文と隔離。この種別だけはフェイズスキップも無視する）
+
 
         if (phaseSkipFlag[0] == false)
         {
@@ -1214,7 +1242,7 @@ public class PuzzleSceneManager : MonoBehaviour
                 }
             }
         }
-
+        objSpellback.SetActive(false);
         if (phaseSkipFlag[3] == false)
         {
             for (l = 0; l < 2; l++)
@@ -1361,6 +1389,7 @@ public class PuzzleSceneManager : MonoBehaviour
         objStatusEffect.GetComponentsInChildren<Text>()[0].text = handCard[player, hand].cardExplain;
         objStatusEffect.GetComponentsInChildren<Text>()[1].text = "";
         objStatusEffect.GetComponentsInChildren<Text>()[2].text = "";
+        StartCoroutine(SpellbackDraw());
         for (int i = 0; i < 5; i++)
         {
             objStatusEffect.GetComponent<RectTransform>().localPosition = new Vector2(i * 1280 / 5 -1280, 0);
@@ -1368,8 +1397,8 @@ public class PuzzleSceneManager : MonoBehaviour
         }
         objStatusEffect.GetComponent<RectTransform>().localPosition = new Vector2(0, 0);
         seAudioSource[6].PlayOneShot(se[6]);
-        for (int i = 0; i < 200; i++) {
-            //呪文詠唱演出（詠唱アニメーション＋効果音。ついでに背景も変えたい。）
+        for (int i = 0; i < 100; i++) {
+            //呪文詠唱演出（詠唱アニメーション＋効果音）
             objStatusEffect.GetComponentsInChildren<RectTransform>()[1].sizeDelta = new Vector2(135+135*Mathf.Sin(i/3),360);
             yield return null;
         }
