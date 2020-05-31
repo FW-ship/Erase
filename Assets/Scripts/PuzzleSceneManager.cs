@@ -30,9 +30,9 @@ public class PuzzleSceneManager : MonoBehaviour
     const int ATTACK_TIME = 60;                  //シュジンコウの攻撃演出時間（フレーム）
     const int CARD_WIDTH = 90;                   //カードの幅
     const int PLAYER_FOLLOWER_POSITION_X = -485; //プレイヤー側シュジンコウの基本位置X座標
-    const int PLAYER_FOLLOWER_POSITION_Y = -160;   //プレイヤー側シュジンコウの基本位置Y座標
+    const int PLAYER_FOLLOWER_POSITION_Y = -130;   //プレイヤー側シュジンコウの基本位置Y座標
     const int ENEMY_FOLLOWER_POSITION_X = 485;   //敵側シュジンコウの基本位置X座標
-    const int ENEMY_FOLLOWER_POSITION_Y = -160;    //敵側シュジンコウの基本位置Y座標
+    const int ENEMY_FOLLOWER_POSITION_Y = -130;    //敵側シュジンコウの基本位置Y座標
     const int MANA_POSITION_X = -485;            //ブロック消去演出でマナが集まる位置X座標
     const int MANA_POSITION_Y = -160;             //ブロック消去演出でマナが集まる位置Y座標
     const int PLAYER_LIFE_POSITION_X = -480;     //プレイヤー側ＬＰ表示のX座標
@@ -63,7 +63,6 @@ public class PuzzleSceneManager : MonoBehaviour
     private int[,] blockMoveTime=new int[WORLD_WIDTH, WORLD_HEIGHT];              //フィールドブロックの落下時間カウント。一定周期で落下。
     private int chainEffectTime;            //chainの演出時間管理変数。
     private bool winloseFlag;               //勝ち負けが決まったか否か
-    private bool cutInRunning;              //カットインが動いているか否か
     private int[] playerEliminatBlockCount = new int[BLOCKTYPE_NUM + 1];        //消えたブロックの色と数をカウント※[]内の数が色を現す。０は使わないが１～５までを使うので要素数は（０を含め）６個。
     private int[,] bufferBlock = new int[WORLD_WIDTH, WORLD_HEIGHT];            //一時的にブロックの情報を仮置きするための配列。消去判定の際にブロックの消去フラグを保存したり、連鎖判定用の落下後予測の際に落下後のブロック配置を代入する。 
     private int timeCount;
@@ -123,6 +122,8 @@ public class PuzzleSceneManager : MonoBehaviour
     private CardData c1;
     Utility u1;
     public List<StatusEffect>[] statusEffect = new List<StatusEffect>[2];
+
+    public int[] maxmana = new int[5];
 
 
     // Use this for initialization
@@ -587,6 +588,13 @@ public class PuzzleSceneManager : MonoBehaviour
                 if (handCard[0, i].cardMana[j] > handCard[0, i].cardCost[j]) { handCard[0, i].cardMana[0] += handCard[0, i].cardMana[j] - handCard[0, i].cardCost[j]; handCard[0, i].cardMana[j] = handCard[0, i].cardCost[j]; }
             }
         }
+        for (j = 1; j < BLOCKTYPE_NUM + 1; j++)
+            {
+                int l = 1;
+                for (int k = 0; k < chainCount; k++) { l *= chainCount; }
+                maxmana[j] += playerEliminatBlockCount[j] * l;
+            }
+
 
         for (i = 0; i < BLOCKTYPE_NUM + 1; i++) { playerEliminatBlockCount[i] = 0; }
         if (eliminatFlag == 0) { return false; }//消えてなかったら０を返す
@@ -1075,33 +1083,32 @@ public class PuzzleSceneManager : MonoBehaviour
                     seAudioSource[11].PlayOneShot(se[11]);
                     yield return StartCoroutine(SpellEffect(l, i)); //呪文演出
                     OtherSpell(l, handCard[l, i].cardNum);//呪文効果
-                    while (cutInRunning == true) { yield return null; }//カットインが終わるまで待つ(OtherSpellは演出内蔵のものがあるので要カットイン待機)
                 }
             }
         }
     }
 
-    private IEnumerator SpellbackDraw()
+    private IEnumerator SpellbackDraw(int player)
     {
-
-        objSpellback.GetComponent<Image>().sprite = null;
-        objSpellback.GetComponent<Image>().sprite = spellback[0];
         for (int j = 0; j < 5; j++)
         {
             yield return null;
         }
-            for (int i = 0; i < 20; i++)
+        objSpellback.SetActive(true);
+        if(player==0)objSpellback.GetComponent<Image>().color = new Color(0.4f,0.4f,1,1);
+        if (player == 1) objSpellback.GetComponent<Image>().color = new Color(1, 0.4f, 0.4f, 1);
+        for (int i = 0; i < 20; i++)
             {
                 objSpellback.GetComponent<Image>().sprite = null;
                 objSpellback.GetComponent<Image>().sprite = spellback[i];
                 for (int j = 0; j < 5; j++) { yield return null;
                 }
             }
+        objSpellback.SetActive(false);
         for (int j = 0; j < 5; j++)
         {
             yield return null;
         }
-        
     }
 
 
@@ -1120,7 +1127,6 @@ public class PuzzleSceneManager : MonoBehaviour
         yield return StartCoroutine(WaitMatchData(300));//300フレームまで同期遅れを許容
         //使用カードの確定（相手）
         CardUse(1);
-        objSpellback.SetActive(true);
         //第２種呪文フェイズ
         //呪文妨害（呪文を妨害する呪文(COUNTER)は相互作用を発生させるので、COUNTER同士では影響を与えない効果に＋他呪文と隔離。この種別だけはフェイズスキップも無視する）
 
@@ -1142,7 +1148,6 @@ public class PuzzleSceneManager : MonoBehaviour
                         objCard[l, i].GetComponent<Image>().enabled = false;//使用したら非表示
                         StartCoroutine(SpellMiss(l));//詠唱失敗演出を詠唱演出に重ねる。
                         yield return StartCoroutine(SpellEffect(l, i));//呪文演出
-                        while (cutInRunning == true) { yield return null; }//カットインが終わるまで待つ
                     }
                 }
             }
@@ -1159,7 +1164,6 @@ public class PuzzleSceneManager : MonoBehaviour
                     {
                         objCard[l, i].GetComponent<Image>().enabled = false;//使用したら非表示
                         yield return StartCoroutine(SpellEffect(l, i));//呪文演出
-                        while (cutInRunning == true) { yield return null; }//カットインが終わるまで待つ
                         seAudioSource[6].PlayOneShot(se[6]);
                         if (l == 0)
                         {
@@ -1199,7 +1203,6 @@ public class PuzzleSceneManager : MonoBehaviour
                         objCard[l, i].GetComponent<Image>().enabled = false;//使用したら非表示
                         StartCoroutine(SpellMiss(l));//詠唱失敗演出を詠唱演出に重ねる。
                         yield return StartCoroutine(SpellEffect(l, i));//呪文演出
-                        while (cutInRunning == true) { yield return null; }//カットインが終わるまで待つ
                     }
                 }
             }
@@ -1216,7 +1219,6 @@ public class PuzzleSceneManager : MonoBehaviour
                     {
                         objCard[l, i].GetComponent<Image>().enabled = false;//使用したら非表示
                         yield return StartCoroutine(SpellEffect(l, i));//呪文演出
-                        while (cutInRunning == true) { yield return null; }//カットインが終わるまで待つ
                         seAudioSource[1].PlayOneShot(se[1]);
                         if (l == 0) { StartCoroutine(LifeDamage(1)); yield return StartCoroutine(Damage(1, handCard[l,i].damage)); }//呪文効果
                         if (l == 1) { StartCoroutine(LifeDamage(0)); yield return StartCoroutine(Damage(0, handCard[l, i].damage)); }//Damage()の第一引数はダメージを「受ける」キャラクターなのでlとDamageの第一引数は逆になる
@@ -1237,28 +1239,9 @@ public class PuzzleSceneManager : MonoBehaviour
                         objCard[l, i].GetComponent<Image>().enabled = false;//使用したら非表示
                         StartCoroutine(SpellMiss(l));//詠唱失敗演出を詠唱演出に重ねる。
                         yield return StartCoroutine(SpellEffect(l, i));//呪文演出
-                        while (cutInRunning == true) { yield return null; }//カットインが終わるまで待つ
-                    }
+                   }
                 }
             }
-        }
-        objSpellback.SetActive(false);
-        if (phaseSkipFlag[3] == false)
-        {
-            for (l = 0; l < 2; l++)
-            {
-                if (followerStatus[l, 2] != 0)                    //シュジンコウが特殊効果を持っていたならば
-                {
-                    seAudioSource[11].PlayOneShot(se[11]);
-                                        //スキル演出（呪文演出とは別に、フォロワースキル関数内に新たに作る。カットインキャラはシュジンコウ、説明文は関数内で設定）
-                    while (cutInRunning == true) { yield return null; }//カットインが終わるまで待つ(OtherSpellは演出内蔵のものがあるので要カットイン待機)
-                }
-            }
-            LifePointCheck();
-            
-            //戦闘フェイズ
-            yield return StartCoroutine("FollowerAttack");
-            LifePointCheck();
         }
 
         //状態異常処理
@@ -1389,7 +1372,7 @@ public class PuzzleSceneManager : MonoBehaviour
         objStatusEffect.GetComponentsInChildren<Text>()[0].text = handCard[player, hand].cardExplain;
         objStatusEffect.GetComponentsInChildren<Text>()[1].text = "";
         objStatusEffect.GetComponentsInChildren<Text>()[2].text = "";
-        StartCoroutine(SpellbackDraw());
+        StartCoroutine(SpellbackDraw(player));
         for (int i = 0; i < 5; i++)
         {
             objStatusEffect.GetComponent<RectTransform>().localPosition = new Vector2(i * 1280 / 5 -1280, 0);
@@ -1437,29 +1420,6 @@ public class PuzzleSceneManager : MonoBehaviour
         }
         if (player == 0) { objLifePoint[0].GetComponent<RectTransform>().localPosition = new Vector3(PLAYER_LIFE_POSITION_X, PLAYER_LIFE_POSITION_Y, 0); }
         if (player == 1) { objLifePoint[1].GetComponent<RectTransform>().localPosition = new Vector3(ENEMY_LIFE_POSITION_X, ENEMY_LIFE_POSITION_Y, 0); }
-    }
-
-    //シュジンコウの攻撃演出
-    public IEnumerator FollowerAttack()
-    {
-        int i;
-            for (i = 0; i < 10; i++)
-            {
-                objFollower[0].GetComponent<RectTransform>().localPosition = new Vector3(PLAYER_FOLLOWER_POSITION_X + 32 * i, PLAYER_FOLLOWER_POSITION_Y, 0);//画面の真ん中(-15)でぶつかる
-                objFollower[1].GetComponent<RectTransform>().localPosition = new Vector3(ENEMY_FOLLOWER_POSITION_X - 32 * i, ENEMY_FOLLOWER_POSITION_Y, 0);
-                yield return null;
-            }
-            seAudioSource[7].PlayOneShot(se[7]);
-            StartCoroutine(Damage(1, followerStatus[0, 0]));//Damageの第一引数はダメージを「受ける」キャラクターなのでシュジンコウの持ち主とは逆。
-            yield return StartCoroutine(Damage(0, followerStatus[1, 0]));//ダメージ演出を同時にやるなら、yield return StartCoroutine（今のコルーチンの進行を止めて参照コルーチンの終了を待つ）は後ろの一つだけでいい。
-            for (i = ATTACK_TIME / 2 - 10; i > 0; i--)
-            {
-                objFollower[0].GetComponent<RectTransform>().localPosition = new Vector3(PLAYER_FOLLOWER_POSITION_X + 32 * (10 / (ATTACK_TIME / 2 - 10)) * i, PLAYER_FOLLOWER_POSITION_Y, 0);//前for文の逆動作を残りの時間で実行。
-                objFollower[1].GetComponent<RectTransform>().localPosition = new Vector3(ENEMY_FOLLOWER_POSITION_X - 32 * (10 / (ATTACK_TIME / 2 - 10)) * i, ENEMY_FOLLOWER_POSITION_Y, 0);
-                yield return null;
-            }
-            objFollower[0].GetComponent<RectTransform>().localPosition = new Vector3(PLAYER_FOLLOWER_POSITION_X, PLAYER_FOLLOWER_POSITION_Y, 0);//元の位置へ
-            objFollower[1].GetComponent<RectTransform>().localPosition = new Vector3(ENEMY_FOLLOWER_POSITION_X, ENEMY_FOLLOWER_POSITION_Y, 0);
     }
 
     //ブロックの消去演出
