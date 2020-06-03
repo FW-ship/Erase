@@ -120,9 +120,11 @@ public class TutorialSceneManager : PuzzleSceneManager
     private void IF(ref int i)
     {
         bool jumpflag = true;
+        string[] manas = new string[5];
         int[] mana=new int[5];
         //求められたマナを得られたかチェック。満たしていれば一行下がる。満たしていなければ最寄りのIFENDまでジャンプ。
-        mana=scenarioText[i].Substring(3).Split(',');
+        manas=scenarioText[i].Substring(3).Split(',');
+        for (int j = 1; j < BLOCKTYPE_NUM + 1; j++) { mana[j] = int.Parse(manas[j]); }
         for (int j = 1; j < BLOCKTYPE_NUM+1; j++) { if (mana[j] > maxmana[j]) { jumpflag = true; } }
         if (jumpflag) {
             while (scenarioText[i] != "ＩＦＥＮＤ：" && i< scenarioText.Length-1) { i++; }
@@ -135,7 +137,7 @@ public class TutorialSceneManager : PuzzleSceneManager
         for (int i = 0; i < HAND_NUM; i++)
         {
             linenum++;
-            handCard[0,i]=c1.card[scenarioText[linenum]].Clone();
+            handCard[0,i]=c1.card[int.Parse(scenarioText[linenum])].Clone();
         }
 
         for (int j = 0; j < WORLD_HEIGHT; j++)

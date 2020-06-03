@@ -17,14 +17,14 @@ public class PuzzleSceneManager : MonoBehaviour
     //定数の宣言
     const int MAXPLAYERLIFE = 20;                //プレイヤーの最大lifepoint
     const int MAXENEMYLIFE = 20;                 //敵の最大lifepoint
-    const int WORLD_HEIGHT = 5;                 //フィールドの縦の長さ
-    const int WORLD_WIDTH = 5;                   //フィールドの横の長さ
-    const int BLOCKTYPE_NUM = 4;                 //ブロックの色の種類数
+    public const int WORLD_HEIGHT = 5;                 //フィールドの縦の長さ
+    public const int WORLD_WIDTH = 5;                   //フィールドの横の長さ
+    public const int BLOCKTYPE_NUM = 4;                 //ブロックの色の種類数
     const int BLOCK_SIZE = 130;                   //ブロックの大きさ（ピクセル）
     const int FIELD_LEFT = -315;                 //フィールドの左端（ピクセル）
     const int FIELD_TOP = 315;                   //フィールドの上端（ピクセル）
-    const int DECKCARD_NUM = 20;                 //デッキの枚数
-    const int HAND_NUM = 3;                      //手札の枚数
+    public const int DECKCARD_NUM = 20;                 //デッキの枚数
+    public const int HAND_NUM = 3;                      //手札の枚数
     const int SOUND_NUM = 16;                    //効果音の種類数
     const int SPELL_TIME = 60;                   //呪文カットインの演出時間（フレーム）
     const int ATTACK_TIME = 60;                  //シュジンコウの攻撃演出時間（フレーム）
@@ -62,12 +62,12 @@ public class PuzzleSceneManager : MonoBehaviour
      private int chainCountForDraw;          //チェイン演出用連鎖数（連鎖数リセット後も最後の連鎖の連鎖数はしばらく表示する必要があるため）（-1はブレイク状態を表す）
     private int[,] blockMoveTime=new int[WORLD_WIDTH, WORLD_HEIGHT];              //フィールドブロックの落下時間カウント。一定周期で落下。
     private int chainEffectTime;            //chainの演出時間管理変数。
-    private bool winloseFlag;               //勝ち負けが決まったか否か
+    public bool winloseFlag;               //勝ち負けが決まったか否か
     private int[] playerEliminatBlockCount = new int[BLOCKTYPE_NUM + 1];        //消えたブロックの色と数をカウント※[]内の数が色を現す。０は使わないが１～５までを使うので要素数は（０を含め）６個。
     private int[,] bufferBlock = new int[WORLD_WIDTH, WORLD_HEIGHT];            //一時的にブロックの情報を仮置きするための配列。消去判定の際にブロックの消去フラグを保存したり、連鎖判定用の落下後予測の際に落下後のブロック配置を代入する。 
     private int timeCount;
     private bool turnEndButtonPush;
-    private bool turnProcess;
+    public bool turnProcess;
     private bool pauseFlag=false;
     private int nowPageStatusEffect=1;
     private int changeStatusEffect = 0;
@@ -86,7 +86,7 @@ public class PuzzleSceneManager : MonoBehaviour
     public int[,] block = new int[WORLD_WIDTH, WORLD_HEIGHT];                  //フィールドの各座標に置かれているブロックの色   
     public bool[,]deleteBlock = new bool[WORLD_WIDTH, WORLD_HEIGHT];
     public Card[,] library = new Card[2,DECKCARD_NUM];
-    private bool blockfloat=false;
+    public bool blockfloat=false;
     private GameObject objMatch;                                                             //通信用ゲームオブジェクト
     private GameObject objEliminatBlockParent;                                               //消去演出用オブジェクトの親オブジェクト
     private GameObject objForNextTurnTime;                                                   //ターンの残り時間のオブジェクトを代入
@@ -119,8 +119,8 @@ public class PuzzleSceneManager : MonoBehaviour
     private List<Sprite> followerImage = new List<Sprite>();                               //シュジンコウの画像（配列は全種類分だが、実際にロードするのは使用する分のみ）
     private Sprite[] spellback = new Sprite[20];
     private System.Random rnd = new System.Random();                                         //乱数を生成。
-    private CardData c1;
-    Utility u1;
+    public CardData c1;
+    public Utility u1;
     public List<StatusEffect>[] statusEffect = new List<StatusEffect>[2];
 
     public int[] maxmana = new int[5];
@@ -145,7 +145,7 @@ public class PuzzleSceneManager : MonoBehaviour
     }
 
     //ゲーム本体
-    private IEnumerator MainGame()
+    public IEnumerator MainGame()
     {
         yield return StartCoroutine(StartSetting());
         while (true)
