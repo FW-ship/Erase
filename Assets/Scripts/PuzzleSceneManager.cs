@@ -74,6 +74,7 @@ public class PuzzleSceneManager : MonoBehaviour
     private int statusEffectViewPlayer = 0;
     public bool[] libraryOutFlag = new bool[2];                                //ライブラリアウトが発生したかの判定
     public int chainCount;                                                     //連鎖数
+    private bool[,] lastbrightblock = new bool[WORLD_WIDTH, WORLD_HEIGHT];
     private int[,] brokenblock = new int[WORLD_WIDTH, WORLD_HEIGHT];            //消去演出中か否か、演出中なら何コマ目(+2)か。
     public bool[] phaseSkipFlag = new bool[5];                                 //フェイズを飛ばすかどうかのフラグ
     public int[] waitCount = new int[2];                                       //通信待機をここまで何回行ったか
@@ -87,6 +88,7 @@ public class PuzzleSceneManager : MonoBehaviour
     public bool[,]deleteBlock = new bool[WORLD_WIDTH, WORLD_HEIGHT];
     public Card[,] library = new Card[2,DECKCARD_NUM];
     public bool blockfloat=false;
+    private bool deleteeffect = false;
     private GameObject objMatch;                                                             //通信用ゲームオブジェクト
     private GameObject objEliminatBlockParent;                                               //消去演出用オブジェクトの親オブジェクト
     private GameObject objForNextTurnTime;                                                   //ターンの残り時間のオブジェクトを代入
@@ -170,22 +172,38 @@ public class PuzzleSceneManager : MonoBehaviour
             {
                 if (deleteBlock[i, j] == true)
                 {
-                    brokenblock[i, j] = 1;
-                    objFieldBlock[i, j].GetComponent<Image>().sprite = null;//unity不具合回避
-                    objFieldBlock[i, j].GetComponent<Image>().sprite = brokenBlockSprite[0];
-                    if (block[i, j] == 1) { objFieldBlock[i, j].GetComponent<Image>().color = new Color(1, 0, 0); }
-                    if (block[i, j] == 2) { objFieldBlock[i, j].GetComponent<Image>().color = new Color(0, 0, 1); }
-                    if (block[i, j] == 3) { objFieldBlock[i, j].GetComponent<Image>().color = new Color(0, 1, 0); }
-                    if (block[i, j] == 4) { objFieldBlock[i, j].GetComponent<Image>().color = new Color(1, 1, 0); }
-                    block[i, j] = 0;
-                    seAudioSource[2].PlayOneShot(se[2]);
-                    for (int k = j - 1; k >= 0; k--) { if (block[i, k] != 0) { if (block[i,k]<10) { blockMoveTime[i, k] = 0; } block[i, k] = block[i, k] % 10 + 10; } }
-                    objTurnEndButton.SetActive(false);
-                    blockfloat = true;
+                    StartCoroutine(BlockDeleteWait(i,j));
                 }
                 deleteBlock[i,j] = false;
             }
         }
+    }
+
+    private IEnumerator BlockDeleteWait(int i,int j)
+    {
+        deleteeffect = true;
+        lastbrightblock[i, j] = true;
+        if (chainCount > 0)
+        {
+            for (int k = 0; k < 25; k++)
+            {
+                yield return null;
+            }
+        }
+        brokenblock[i, j] = 1;
+        objFieldBlock[i, j].GetComponent<Image>().sprite = null;//unity不具合回避
+        objFieldBlock[i, j].GetComponent<Image>().sprite = brokenBlockSprite[0];
+        if (block[i, j] == 1) { objFieldBlock[i, j].GetComponent<Image>().color = new Color(1, 0, 0); }
+        if (block[i, j] == 2) { objFieldBlock[i, j].GetComponent<Image>().color = new Color(0, 0, 1); }
+        if (block[i, j] == 3) { objFieldBlock[i, j].GetComponent<Image>().color = new Color(0, 1, 0); }
+        if (block[i, j] == 4) { objFieldBlock[i, j].GetComponent<Image>().color = new Color(1, 1, 0); }
+        block[i, j] = 0;
+        seAudioSource[2].PlayOneShot(se[2]);
+        for (int k = j - 1; k >= 0; k--) { if (block[i, k] != 0) { if (block[i, k] < 10) { blockMoveTime[i, k] = 0; } block[i, k] = block[i, k] % 10 + 10; } }
+        objTurnEndButton.SetActive(false);
+        blockfloat = true;
+        lastbrightblock[i, j] = false;
+        deleteeffect = false;
     }
 
     //開始処理のコルーチン
@@ -481,7 +499,7 @@ public class PuzzleSceneManager : MonoBehaviour
     private void TimeFunc()
     {
         int i, j,k;
-        MoveBlock();
+        if (!deleteeffect) { MoveBlock(); }
         chainEffectTime++;
 
         LibraryOutCheck();//ライブラリアウトが起きたかの判定。ブレイクタイミングでの負けを即座に判定するために毎フレーム判定（判定自体も軽い）
@@ -770,7 +788,16 @@ public class PuzzleSceneManager : MonoBehaviour
                     objFieldBlock[i, j].GetComponent<Image>().enabled = true;
                     objFieldBlock[i, j].GetComponent<Image>().sprite = null;//unity不具合回避
                     objFieldBlock[i, j].GetComponent<Image>().sprite = blockImage[block[i, j]];
-                    objFieldBlock[i, j].GetComponent<Image>().color = new Color(1, 1, 1);
+                    if (deleteeffect) {
+                        if (lastbrightblock[i,j]) { objFieldBlock[i, j].GetComponent<Image>().color = new Color(0.9f+Mathf.Sin((float)timeCount / 3)*0.1f, 0.9f+ Mathf.Sin((float)timeCount / 3) * 0.1f, 0.9f+ Mathf.Sin((float)timeCount / 3) * 0.1f); }
+                        else {
+                            objFieldBlock[i, j].GetComponent<Image>().color = new Color(0.5f, 0.5f, 0.5f);
+                        }
+                    }
+                    else
+                    {
+                        objFieldBlock[i, j].GetComponent<Image>().color = new Color(1, 1, 1);
+                    }
                     if (block[i,j]>10) { objFieldBlock[i, j].GetComponent<RectTransform>().localPosition= new Vector3(130*i-260, 260-130*j-(blockMoveTime[i,j]%PACE_BLOCK_MOVE)*BLOCK_SIZE/PACE_BLOCK_MOVE, 0); }
                     else { objFieldBlock[i, j].GetComponent<RectTransform>().localPosition = new Vector3(130 * i - 260, 260-130 * j, 0); }
                 }
@@ -1362,7 +1389,6 @@ public class PuzzleSceneManager : MonoBehaviour
     }
 
     //呪文詠唱時演出
-    //キャラクターカットイン（呪文名表示）
     public IEnumerator SpellEffect(int player, int hand)//playerがＰＬエネミー、handが手札の何枚目か。
     {
         objStatusEffect.GetComponentsInChildren<Image>()[1].sprite = null;//unity不具合回避
@@ -1375,7 +1401,8 @@ public class PuzzleSceneManager : MonoBehaviour
         StartCoroutine(SpellbackDraw(player));
         for (int i = 0; i < 5; i++)
         {
-            objStatusEffect.GetComponent<RectTransform>().localPosition = new Vector2(i * 1280 / 5 -1280, 0);
+            if (player == 0) { objStatusEffect.GetComponent<RectTransform>().localPosition = new Vector2(i * 1280 / 5 - 1280, 0); }
+            if (player == 1) { objStatusEffect.GetComponent<RectTransform>().localPosition = new Vector2(-i * 1280 / 5 + 1280, 0); }
             yield return null;
         }
         objStatusEffect.GetComponent<RectTransform>().localPosition = new Vector2(0, 0);
@@ -1388,7 +1415,8 @@ public class PuzzleSceneManager : MonoBehaviour
         objStatusEffect.GetComponentsInChildren<RectTransform>()[1].sizeDelta = new Vector2(270, 360);
         for (int i = 0; i < 5; i++)
         {
-            objStatusEffect.GetComponent<RectTransform>().localPosition = new Vector2(i * 1280 / 5, 0);
+            if (player == 0) { objStatusEffect.GetComponent<RectTransform>().localPosition = new Vector2(i * 1280 / 5, 0); }
+            if (player == 1) { objStatusEffect.GetComponent<RectTransform>().localPosition = new Vector2(-i * 1280 / 5, 0); }
             yield return null;
         }
         objStatusEffect.GetComponent<RectTransform>().localPosition = new Vector2(1280, 0);
