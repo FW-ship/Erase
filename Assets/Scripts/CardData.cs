@@ -137,7 +137,7 @@ public class CardData : MonoBehaviour {
                 new Card {
                     cardNum = 1,
                     cardName = "火花",
-                    cardExplain = "<color=red>火花</color>\nコスト：<color=red><size=48>・★☽☀۞۝</size>：赤3</color>　　　　<b><color=black>Ｃ</color></b>\n対戦相手に1点のダメージを与える。\n\n<i>すべては小さな火花から始まる。</i>",
+                    cardExplain = "<color=red>火花</color>\nコスト：<color=red>・★☽☀۞۝：赤3</color>　　　　<b><color=black>Ｃ</color></b>\n対戦相手に1点のダメージを与える。\n\n<i>すべては小さな火花から始まる。</i>",
                     cardCost = new int[] { 0, 3, 0, 0, 0 },
                     damage = 1
                 });

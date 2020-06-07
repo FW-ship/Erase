@@ -3,7 +3,9 @@ using UnityEngine.UI;
 
 public class PuzzleCardPush : MonoBehaviour {
     const int HAND_NUM = 3;
-
+    private int count = 0;
+    private int n10=0;
+    private int n1=0;
     private GameObject refObj;
     private GameObject[,] objText=new GameObject[2,HAND_NUM];
     private GameObject[,] objImage = new GameObject[2, HAND_NUM];
@@ -22,25 +24,40 @@ public class PuzzleCardPush : MonoBehaviour {
         }
         p1 = refObj.GetComponent<PuzzleSceneManager>();
         c1 = refObj.GetComponent<CardData>();
+        n10 = int.Parse(name.Substring(4)) / 10;
+        n1 = int.Parse(name.Substring(5));
     }
 	
 	// Update is called once per frame
 	void Update () {
-		
+        if (Input.GetMouseButtonDown(0) &&
+            (Input.mousePosition.y < 620 || Input.mousePosition.y > 740 ||
+            Input.mousePosition.x < n1 * 100 + 10 + (n10) * 970 || Input.mousePosition.x > n1 * 100 + 100 + (n10) * 970
+            )) { OtherPush(); }
 	}
 
     //カードがタップされた場合
     public void PushCard()
     {
-        objImage[int.Parse(name.Substring(4)) / 10, int.Parse(name.Substring(5))].GetComponent<Image>().enabled = true;
-        objText[int.Parse(name.Substring(4)) / 10, int.Parse(name.Substring(5))].GetComponent<Text>().enabled = true;
-        string[] explainList = c1.card[p1.handCard[int.Parse(name.Substring(4)) / 10, int.Parse(name.Substring(5))].cardNum].cardExplain.Split('\n');
-        objText[int.Parse(name.Substring(4)) / 10, int.Parse(name.Substring(5))].GetComponent<Text>().text =explainList[0] + "\n" + explainList[1] + "\n" + explainList[2] + "\n" + explainList[3];//テキストを代入
+        if (count == 1)
+        {
+            GetComponent<Image>().enabled = false;
+            count = 0;
+        }
+        if (count == 0)
+        {
+            objImage[n10, n1].GetComponent<Image>().enabled = true;
+            objText[n10, n1].GetComponent<Text>().enabled = true;
+            string[] explainList = c1.card[p1.handCard[n10, n1].cardNum].cardExplain.Split('\n');
+            objText[n10, n1].GetComponent<Text>().text = explainList[0] + "\n" + explainList[1] + "\n" + explainList[2] + "\n" + explainList[3];//テキストを代入
+            count++;
+        }
     }
-    //獲得カードから指が離れた場合
-    public void LeaveCard()
+
+    public void OtherPush()
     {
-        objImage[int.Parse(name.Substring(4)) / 10, int.Parse(name.Substring(5))].GetComponent<Image>().enabled = false;
-        objText[int.Parse(name.Substring(4)) / 10, int.Parse(name.Substring(5))].GetComponent<Text>().enabled = false;
+        objImage[n10, n1].GetComponent<Image>().enabled = false;
+        objText[n10, n1].GetComponent<Text>().enabled = false;
+        count = 0;
     }
 }

@@ -36,13 +36,9 @@ public class PuzzleSceneManager : MonoBehaviour
     const int MANA_POSITION_X = -485;            //ブロック消去演出でマナが集まる位置X座標
     const int MANA_POSITION_Y = -160;             //ブロック消去演出でマナが集まる位置Y座標
     const int PLAYER_LIFE_POSITION_X = -480;     //プレイヤー側ＬＰ表示のX座標
-    const int PLAYER_LIFE_POSITION_Y = 100;       //プレイヤー側ＬＰ表示のY座標
+    const int PLAYER_LIFE_POSITION_Y = 70;       //プレイヤー側ＬＰ表示のY座標
     const int ENEMY_LIFE_POSITION_X = 480;       //敵側ＬＰ表示のX座標
-    const int ENEMY_LIFE_POSITION_Y = 100;        //敵側ＬＰ表示のY座標
-    const int PLAYER_SPELL_POSITION_X = -390;    //プレイヤー側詠唱演出の基本位置X座標
-    const int PLAYER_SPELL_POSITION_Y = -70;      //プレイヤー側詠唱演出の基本位置Y座標
-    const int ENEMY_SPELL_POSITION_X = 390;      //敵側詠唱演出の基本位置X座標
-    const int ENEMY_SPELL_POSITION_Y = -70;       //敵側詠唱演出の基本位置Y座標
+    const int ENEMY_LIFE_POSITION_Y = 70;        //敵側ＬＰ表示のY座標
     const int PLAYER_CARD_X = -537;              //プレイヤー側手札０のX位置
     const int ENEMY_CARD_X = 294;                //敵側手札０のX位置
     const int CARD_Y = -290;                      //手札のY位置
@@ -101,7 +97,6 @@ public class PuzzleSceneManager : MonoBehaviour
     private GameObject[] objLifeDamage = new GameObject[2];                                  //第三種（攻撃）呪文演出のオブジェクト
     private GameObject[] objFollower = new GameObject[2];                                    //シュジンコウのゲームオブジェクトを代入する配列
     private GameObject[] objLibrary = new GameObject[2];                                     //ライブラリのゲームオブジェクトを代入する配列
-    private GameObject[] objCutIn = new GameObject[2];                                       //カットインのオブジェクト
     private GameObject[] objFollowerDamage = new GameObject[2];                              //シュジンコウに与えられているダメージを表示するオブジェクト
     private GameObject[] objLifePoint = new GameObject[2];                                   //lifepointのゲームオブジェクトを代入する(0がＰＬ、1が敵）
     private GameObject[,] objFieldBlock = new GameObject[WORLD_WIDTH, WORLD_HEIGHT];         //objはフィールドブロックのゲームオブジェクト（描画されるブロック）を代入する配列。
@@ -262,13 +257,6 @@ public class PuzzleSceneManager : MonoBehaviour
                     objCardMana[i, j, k] = GameObject.Find("cardmana" + i.ToString() + j.ToString() + (k+1).ToString()).gameObject as GameObject;
                 }
             }
-        }
-
-
-        //カットイン関連も描画用オブジェクトを変数に代入。
-        for (i = 0; i < 2; i++)
-        {
-            objCutIn[i] = GameObject.Find("cutin" + i.ToString()).gameObject as GameObject;
         }
 
         //連鎖数表示について描画用オブジェクトを変数に代入。
@@ -1540,11 +1528,6 @@ public class PuzzleSceneManager : MonoBehaviour
     {
         if (blockfloat) { return; }
             deleteBlock[x / 10, x % 10] = true;
-    }
-
-    public void CardPush(int x)
-    {
-        objCard[0, x].GetComponent<Image>().enabled = false;
     }
 
     public void CharacterPush(int x)
