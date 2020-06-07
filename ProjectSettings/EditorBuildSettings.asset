@@ -29,3 +29,7 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/MatchScene.unity
     guid: 3f5ae54131c3b9d4c82796e78761fbc6
+  - enabled: 1
+    path: Assets/TutorialScene.unity
+    guid: 9ac00207f5cf1d24cbc6e734f2287257
+  m_configObjects: {}

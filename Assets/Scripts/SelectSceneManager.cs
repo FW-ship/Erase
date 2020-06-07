@@ -33,8 +33,12 @@ public class SelectSceneManager : MonoBehaviour {
 
     public void PushBlueBookButton()
     {
+        /*
         PlayerPrefs.SetString("ScenarioName", "テスト用文章");
         SceneManager.LoadScene( "StoryScene");
+        */
+        PlayerPrefs.SetString("ScenarioName", "チュートリアルテスト");
+        SceneManager.LoadScene("TutorialScene");
     }
     
 

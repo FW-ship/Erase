@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class TutorialSceneManager : PuzzleSceneManager
 {
@@ -9,6 +10,7 @@ public class TutorialSceneManager : PuzzleSceneManager
     public GameObject objFace;
     public GameObject objName;
     public string[] scenarioText;
+    public int linenum = 0;
     
 
     // Start is called before the first frame update
@@ -70,14 +72,15 @@ public class TutorialSceneManager : PuzzleSceneManager
         //シナリオ部  
         for (int i = 30; i < scenarioText.Length; i++)
         {
-            //★未：wait系と分岐処理のテスト
+            //★未：wait系と分岐処理のテスト。ＥＮＤでシーンジャンプ。
             
             if (scenarioText[i].Length >= 10 && scenarioText[i].Substring(0, 10) == "ＷＡＩＴＥＲＡＳＥ：") { yield return StartCoroutine(Wait(0));i++; }
             else if (scenarioText[i].Length >= 9 && scenarioText[i].Substring(0, 9) == "ＷＡＩＴＴＵＲＮ：") { yield return StartCoroutine(Wait(1));i++; }
             else if (scenarioText[i].Length >= 9 && scenarioText[i].Substring(0, 9) == "ＷＡＩＴＬＡＳＴ：") { yield return StartCoroutine(Wait(2));i++; }
-            else if (scenarioText[i].Length >= 3 && scenarioText[i].Substring(0, 3) == "ＩＦ：") { IF(ref i); }
+            else if (scenarioText[i].Length >= 6 && scenarioText[i].Substring(0, 6) == "ＩＦＮＯＴ：") { IFNOT(ref i); }
             else if (scenarioText[i].Length >= 5 && scenarioText[i].Substring(0, 5) == "ＢＡＣＫ：") { i -= 1 + int.Parse(scenarioText[i].Substring(5)); }
-            else if (scenarioText[i].Length >= 4 && scenarioText[i].Substring(0, 4) == "ＰＵＴ：") { Put(ref i); }
+            else if (scenarioText[i].Length >= 4 && scenarioText[i].Substring(0, 4) == "ＰＵＴ：") { linenum = i; yield return StartCoroutine(Put());i = linenum; }
+            else if (scenarioText[i].Length >= 4 && scenarioText[i].Substring(0, 4) == "ＥＮＤ：") { string[] tmp = scenarioText[i].Substring(4).Split(',');if (win) { PlayerPrefs.SetString("ScenarioName", tmp[0]); } else { PlayerPrefs.SetString("ScenarioName", tmp[1]); } }
             else { if (scenarioText[i] == "" || scenarioText[i] == "ＥＮＤ：" || scenarioText[i] == "ＩＦＥＮＤ：") { continue; } Talk(ref i); yield return StartCoroutine(u1.PushWait()); }
             Resources.UnloadUnusedAssets();
         }
@@ -85,6 +88,9 @@ public class TutorialSceneManager : PuzzleSceneManager
 
     private IEnumerator Wait(int mode)
     {
+        objTextImage.SetActive(false);
+        objName.SetActive(false);
+
         for (int j = 0; j < 5; j++) { maxmana[j] = 0; }
         if (mode == 0)
         {
@@ -115,39 +121,60 @@ public class TutorialSceneManager : PuzzleSceneManager
                 yield return null;
             }
         }
+        objTextImage.SetActive(true);
+        objName.SetActive(true);
     }
 
-    private void IF(ref int i)
+    private void IFNOT(ref int i)
     {
         bool jumpflag = true;
         string[] manas = new string[5];
         int[] mana=new int[5];
-        //求められたマナを得られたかチェック。満たしていれば一行下がる。満たしていなければ最寄りのIFENDまでジャンプ。
+        //求められたマナを得られたかチェック。満たしていなければ一行下がる。満たしていれば最寄りのIFENDまでスキップ。
         manas=scenarioText[i].Substring(3).Split(',');
         for (int j = 1; j < BLOCKTYPE_NUM + 1; j++) { mana[j] = int.Parse(manas[j]); }
-        for (int j = 1; j < BLOCKTYPE_NUM+1; j++) { if (mana[j] > maxmana[j]) { jumpflag = true; } }
+        for (int j = 1; j < BLOCKTYPE_NUM+1; j++) { if (mana[j] > maxmana[j]) { jumpflag = false; } }
         if (jumpflag) {
             while (scenarioText[i] != "ＩＦＥＮＤ：" && i< scenarioText.Length-1) { i++; }
         }
     }
 
 
-    private void Put(ref int linenum)
+    private IEnumerator Put()
     {
+        int cnum = 0;
         for (int i = 0; i < HAND_NUM; i++)
         {
             linenum++;
-            handCard[0,i]=c1.card[int.Parse(scenarioText[linenum])].Clone();
+            cnum = int.Parse(scenarioText[linenum]);
+            handCard[0,i]=c1.card[cnum].Clone();
+            if (cardImage[cnum] == null) { cardImage[cnum] = Resources.Load<Sprite>("card" + cnum.ToString()); }
+            objCard[0, i].GetComponent<Image>().sprite = cardImage[cnum];
+            for (int j = 0; j < BLOCKTYPE_NUM + 1; j++) { handCard[0, i].cardMana[j] = 0; }//カードに貯まったマナはリセット
+            DrawCardCost(0, i);
+            handCard[0, i].useCard = false;//新たに引いたので、使っていない状態になおす。
+            objCard[0, i].GetComponent<Image>().enabled = true;//引き直したので、非表示になっていたカードを表示しなおす。
         }
 
         for (int j = 0; j < WORLD_HEIGHT; j++)
+        {
+            for (int i = 0; i < WORLD_WIDTH; i++)
+            {
+                block[i, j] = 0;
+            }
+        }
+        yield return null;
+        for (int j = WORLD_HEIGHT-1; j >=0; j--)
         {
             linenum++;  
             for (int i = 0; i < WORLD_WIDTH; i++)
             {
                 block[i,j] = int.Parse(scenarioText[linenum].Substring(i, 1));
+                seAudioSource[0].PlayOneShot(se[0]); yield return null;
+                blockMoveTime[i, j] = 0;
             }
         }
+
     }
 
 

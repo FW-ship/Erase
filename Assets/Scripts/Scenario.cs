@@ -31,8 +31,6 @@ public class Scenario : MonoBehaviour {
     public string[] scenarioText;
     private string[] charaname = new string[10];//各オブジェクトに入っているキャラの対応表。
 
-    private List<int> mainStory = new List<int>();                    //パックから黒いカードを入手したフラグ(0が未入手、1が入手したばかり（イベント未読）、2が入手かつイベント既読)
-
     //public GameObject objText;                                               //シナリオテキスト(カード獲得時のpushがあるのでpublic)
     private GameObject objSkipButton;                                        //スキップボタンオブジェクト
     private GameObject objFilm;                                              //回想演出のオブジェクト
@@ -84,13 +82,6 @@ public class Scenario : MonoBehaviour {
         for (i = 0; i < CHARACTER_NUM + 1; i++)
         {
             characterImage.Add(Resources.Load<Sprite>("character" + i.ToString()));
-        }
-
-
-        //シナリオ進行状況の読み込み
-        for (i = 0; i < SCENARIO_NUM + 1; i++)
-        {
-            mainStory.Add(PlayerPrefs.GetInt("mainStory" + i.ToString(), 0));//メインストーリーのどれを見たかのロード
         }
         scenarioCount = PlayerPrefs.GetInt("scenarioCount", 0);//これからプレイするシナリオ番号のロード
         maxScenarioCount = PlayerPrefs.GetInt("maxScenarioCount", 0);//シナリオをどこまで進めたかのロード
@@ -593,9 +584,6 @@ public class Scenario : MonoBehaviour {
             getCardText += "\n";
             PlayerPrefs.SetInt("coin", coin);
             PlayerPrefs.SetInt("haveCard" + getCard[i].ToString(), c1.card[getCard[i]].haveCard);//セーブ
-            if (getCard[i] == 15 && mainStory[1] == 0) { mainStory[1] = 1; PlayerPrefs.SetInt("mainStory1", 1); }//黒のカードを引いたらメインストーリーイベントのフラグをたてる。
-            if (getCard[i] == 45 && mainStory[2] == 0) { mainStory[2] = 1; PlayerPrefs.SetInt("mainStory2", 1); }//黒のカードを引いたらメインストーリーイベントのフラグをたてる。
-            if (getCard[i] == 62 && mainStory[3] == 0) { mainStory[3] = 1; PlayerPrefs.SetInt("mainStory3", 1); }//黒のカードを引いたらメインストーリーイベントのフラグをたてる。
             PlayerPrefs.Save();//カード取得のデータを確実に残すためセーブデータを書き込み。
         }
         StartCoroutine(getRareCard(getCardRarity));//レアカード判定に使う配列getCardRarityを引数の形でコルーチンに渡す

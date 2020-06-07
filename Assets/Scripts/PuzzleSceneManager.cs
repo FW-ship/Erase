@@ -56,7 +56,7 @@ public class PuzzleSceneManager : MonoBehaviour
 
     //変数の宣言
      private int chainCountForDraw;          //チェイン演出用連鎖数（連鎖数リセット後も最後の連鎖の連鎖数はしばらく表示する必要があるため）（-1はブレイク状態を表す）
-    private int[,] blockMoveTime=new int[WORLD_WIDTH, WORLD_HEIGHT];              //フィールドブロックの落下時間カウント。一定周期で落下。
+    public int[,] blockMoveTime=new int[WORLD_WIDTH, WORLD_HEIGHT];              //フィールドブロックの落下時間カウント。一定周期で落下。
     private int chainEffectTime;            //chainの演出時間管理変数。
     public bool winloseFlag;               //勝ち負けが決まったか否か
     private int[] playerEliminatBlockCount = new int[BLOCKTYPE_NUM + 1];        //消えたブロックの色と数をカウント※[]内の数が色を現す。０は使わないが１～５までを使うので要素数は（０を含め）６個。
@@ -85,6 +85,7 @@ public class PuzzleSceneManager : MonoBehaviour
     public Card[,] library = new Card[2,DECKCARD_NUM];
     public bool blockfloat=false;
     private bool deleteeffect = false;
+    public bool win = false;
     private GameObject objMatch;                                                             //通信用ゲームオブジェクト
     private GameObject objEliminatBlockParent;                                               //消去演出用オブジェクトの親オブジェクト
     private GameObject objForNextTurnTime;                                                   //ターンの残り時間のオブジェクトを代入
@@ -112,7 +113,7 @@ public class PuzzleSceneManager : MonoBehaviour
     public GameObject objSpellback;
     public List<AudioSource> seAudioSource = new List<AudioSource>();                      //効果音のオーディオソース（音程変更等で効果音ごとに触るので各効果音ごとに取得）
     public List<AudioClip> se = new List<AudioClip>();                                     //効果音のオーディオクリップ
-    private List<Sprite> cardImage = new List<Sprite>();                                   //カードの画像（配列は全種類分だが、実際にロードするのは使用する分のみ）
+    public List<Sprite> cardImage = new List<Sprite>();                                   //カードの画像（配列は全種類分だが、実際にロードするのは使用する分のみ）
     private List<Sprite> followerImage = new List<Sprite>();                               //シュジンコウの画像（配列は全種類分だが、実際にロードするのは使用する分のみ）
     private Sprite[] spellback = new Sprite[20];
     private System.Random rnd = new System.Random();                                         //乱数を生成。
@@ -460,23 +461,24 @@ public class PuzzleSceneManager : MonoBehaviour
         }
 
         //ブロックを生成
-        CreateNewBlock();
+        CreateNewBlock(true);
     }
 
 
     // 新しいブロックの生成
-    private void CreateNewBlock()
+    private void CreateNewBlock(bool waitmode)
     {
-        FillBlank();
+        if (!winloseFlag) { StartCoroutine(FillBlank(waitmode)); }
     }
 
-    private void FillBlank()
+    private IEnumerator FillBlank(bool waitmode)
     {
-        for (int i = 0; i < WORLD_HEIGHT; i++)
+        for (int i = WORLD_HEIGHT-1; i >= 0; i--)
         {
             for (int j = 0; j < WORLD_WIDTH; j++)
             {
                 if (block[j,i]==0) { block[j, i] = Random.Range(1, BLOCKTYPE_NUM + 1); while(CheckEliminatBlock(true)){ block[j, i] = Random.Range(1, BLOCKTYPE_NUM + 1); } }
+                if (waitmode) { seAudioSource[0].PlayOneShot(se[0]); yield return null; }
                 blockMoveTime[i, j]=0;
             }
         }
@@ -487,7 +489,7 @@ public class PuzzleSceneManager : MonoBehaviour
     private void TimeFunc()
     {
         int i, j,k;
-        if (!deleteeffect) { MoveBlock(); }
+        if (!deleteeffect && !turnProcess) { MoveBlock(); }
         chainEffectTime++;
 
         LibraryOutCheck();//ライブラリアウトが起きたかの判定。ブレイクタイミングでの負けを即座に判定するために毎フレーム判定（判定自体も軽い）
@@ -1025,6 +1027,8 @@ public class PuzzleSceneManager : MonoBehaviour
     {
         if (winloseFlag == false)//まだ勝ち負けが決まっていないなら（シーン移動が完了するまで並列でゲームは動き続けるので、winやlose関数が多重起動しないように）
         {
+            win = true;
+            yield return null;
             seAudioSource[9].PlayOneShot(se[9]);
             objWinLose.gameObject.SetActive(true);
             objWinLose.GetComponent<Text>().text = "<color=red><size=240>YOU WIN</size><size=144>\n" + Case + "</size></color>";
@@ -1037,7 +1041,6 @@ public class PuzzleSceneManager : MonoBehaviour
             }
             else
             {
-                PlayerPrefs.SetInt("scenarioCount", PlayerPrefs.GetInt("scenarioCount", 0) + 1);//シナリオを進める。
                 yield return GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "StoryScene");//ストーリーシーンへ
             }
         }
@@ -1049,6 +1052,8 @@ public class PuzzleSceneManager : MonoBehaviour
     {
         if (winloseFlag == false)//まだ勝ち負けが決まっていないなら（シーン移動が完了するまで並列でゲームは動き続けるので、winやlose関数が多重起動しないように）
         {
+            win = false;
+            yield return null;
             seAudioSource[9].PlayOneShot(se[9]);
             objWinLose.gameObject.SetActive(true);
             objWinLose.GetComponent<Text>().text = "<color=blue><size=240>YOU LOSE</size><size=144>\n" + Case + "</size></color>";
@@ -1061,7 +1066,7 @@ public class PuzzleSceneManager : MonoBehaviour
             }
             else
             {
-                yield return GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "GameOverScene");
+                yield return GetComponent<Utility>().StartCoroutine("LoadSceneCoroutine", "StoryScene");//ストーリーシーンへ
             }
         }
     }
@@ -1203,8 +1208,8 @@ public class PuzzleSceneManager : MonoBehaviour
                         }
                     }
                 }
+                LifePointCheck();
             }
-            LifePointCheck();
         }
         else
         {
@@ -1239,8 +1244,8 @@ public class PuzzleSceneManager : MonoBehaviour
                         if (l == 1) { StartCoroutine(LifeDamage(0)); yield return StartCoroutine(Damage(0, handCard[l, i].damage)); }//Damage()の第一引数はダメージを「受ける」キャラクターなのでlとDamageの第一引数は逆になる
                     }
                 }
+                LifePointCheck();
             }
-            LifePointCheck();
         }
         else
         {
@@ -1268,7 +1273,7 @@ public class PuzzleSceneManager : MonoBehaviour
             {
                 tmpflag = true;
                 objStatusEffect.SetActive(true);
-                if (statusEffect[l][x].restTurn > 0) { statusEffect[l][x].statusEffectDelegate(l); statusEffect[l][x].restTurn--; } else { statusEffect[l][x].statusEndEffectDelegate(l); tmp.Add(x); }
+                if (statusEffect[l][x].restTurn > 0) { statusEffect[l][x].statusEffectDelegate(l); statusEffect[l][x].restTurn--; LifePointCheck(); } else { statusEffect[l][x].statusEndEffectDelegate(l); tmp.Add(x); LifePointCheck(); }
                 yield return StartCoroutine(StatusEffectDraw(l, x));
             }
             for (int x = 0; x < tmp.Count; x++) { statusEffect[l].RemoveAt(tmp[x]); }
@@ -1283,6 +1288,7 @@ public class PuzzleSceneManager : MonoBehaviour
         TurnEnd();//ターン終了処理
         //通信対戦時の同期待ち（cardManaデータを一致させる）
         yield return StartCoroutine(WaitMatchData(300));//300フレームまで同期遅れを許容
+        for (int j = 0; j < WORLD_HEIGHT * WORLD_WIDTH; j++) { yield return null; }
         turnProcess = false;
         objStatusEffect.SetActive(false);
     }
@@ -1311,7 +1317,7 @@ public class PuzzleSceneManager : MonoBehaviour
                 }
             }
         }
-        CreateNewBlock();//空白部分にブロックを生成。
+        CreateNewBlock(true);//空白部分にブロックを生成。
     }
 
     //ダメージ処理関数（playerがダメージを「受けた」のがプレイヤーか敵か、damageがダメージ量）

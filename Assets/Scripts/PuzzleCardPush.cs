@@ -41,8 +41,13 @@ public class PuzzleCardPush : MonoBehaviour {
     {
         if (count == 1)
         {
-            GetComponent<Image>().enabled = false;
-            count = 0;
+            if (n10 == 0)
+            {
+                GetComponent<Image>().enabled = false;
+            }
+            objImage[n10, n1].GetComponent<Image>().enabled = false;
+            objText[n10, n1].GetComponent<Text>().enabled = false;
+            count = -1;
         }
         if (count == 0)
         {
@@ -52,6 +57,7 @@ public class PuzzleCardPush : MonoBehaviour {
             objText[n10, n1].GetComponent<Text>().text = explainList[0] + "\n" + explainList[1] + "\n" + explainList[2] + "\n" + explainList[3];//テキストを代入
             count++;
         }
+        if (count == -1) { count = 0; }
     }
 
     public void OtherPush()
