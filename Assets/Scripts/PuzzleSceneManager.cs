@@ -62,9 +62,9 @@ public class PuzzleSceneManager : MonoBehaviour
     private int[] playerEliminatBlockCount = new int[BLOCKTYPE_NUM + 1];        //消えたブロックの色と数をカウント※[]内の数が色を現す。０は使わないが１～５までを使うので要素数は（０を含め）６個。
     private int[,] bufferBlock = new int[WORLD_WIDTH, WORLD_HEIGHT];            //一時的にブロックの情報を仮置きするための配列。消去判定の際にブロックの消去フラグを保存したり、連鎖判定用の落下後予測の際に落下後のブロック配置を代入する。 
     private int timeCount;
-    private bool turnEndButtonPush;
+    public bool turnEndButtonPush;
     public bool turnProcess;
-    private bool pauseFlag=false;
+    public bool pauseFlag=false;
     private int nowPageStatusEffect=1;
     private int changeStatusEffect = 0;
     private int statusEffectViewPlayer = 0;
@@ -1543,7 +1543,7 @@ public class PuzzleSceneManager : MonoBehaviour
         u1.flick = 0;
         StartCoroutine(StatusEffectView(x));
     }
-    private IEnumerator NoStatusEffectView(int player)
+    public IEnumerator NoStatusEffectView(int player)
     {
         objStatusEffect.SetActive(true);
         objStatusViewCancelButton.SetActive(true);
@@ -1564,7 +1564,7 @@ public class PuzzleSceneManager : MonoBehaviour
         objStatusViewCancelButton.SetActive(false);
     }
 
-    private IEnumerator StatusEffectView(int player)
+    public IEnumerator StatusEffectView(int player)
     {
         int effectnum = 0;
         string explain;

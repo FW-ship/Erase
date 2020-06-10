@@ -9,6 +9,7 @@ public class TutorialSceneManager : PuzzleSceneManager
     public GameObject objTextImage;                                         //テキスト表示欄の画像
     public GameObject objFace;
     public GameObject objName;
+    public GameObject objNote;
     public string[] scenarioText;
     public int linenum = 0;
     
@@ -80,9 +81,32 @@ public class TutorialSceneManager : PuzzleSceneManager
             else if (scenarioText[i].Length >= 6 && scenarioText[i].Substring(0, 6) == "ＩＦＮＯＴ：") { IFNOT(ref i); }
             else if (scenarioText[i].Length >= 5 && scenarioText[i].Substring(0, 5) == "ＢＡＣＫ：") { i -= 1 + int.Parse(scenarioText[i].Substring(5)); }
             else if (scenarioText[i].Length >= 4 && scenarioText[i].Substring(0, 4) == "ＰＵＴ：") { linenum = i; yield return StartCoroutine(Put());i = linenum; }
+            else if (scenarioText[i].Length >= 5 && scenarioText[i].Substring(0, 5) == "ＮＯＴＥ：") { Note(i); }
             else if (scenarioText[i].Length >= 4 && scenarioText[i].Substring(0, 4) == "ＥＮＤ：") { string[] tmp = scenarioText[i].Substring(4).Split(',');if (win) { PlayerPrefs.SetString("ScenarioName", tmp[0]); } else { PlayerPrefs.SetString("ScenarioName", tmp[1]); } }
-            else { if (scenarioText[i] == "" || scenarioText[i] == "ＥＮＤ：" || scenarioText[i] == "ＩＦＥＮＤ：") { continue; } Talk(ref i); yield return StartCoroutine(u1.PushWait()); }
+            else {
+                if (scenarioText[i] == "" || scenarioText[i] == "ＥＮＤ：" || scenarioText[i] == "ＩＦＥＮＤ：") { continue; }
+                Talk(ref i); yield return StartCoroutine(u1.PushWait());
+            }
             Resources.UnloadUnusedAssets();
+        }
+    }
+
+    private void Note(int i)
+    {
+        string[] xy=new string[2];
+        objNote.SetActive(true);
+        //位置設定
+        xy=scenarioText[i].Substring(5).Split(',');
+        objNote.GetComponent<RectTransform>().localPosition = new Vector2(int.Parse(xy[0]), int.Parse(xy[1]));
+        StartCoroutine("MoveNote");
+    }
+
+    private IEnumerator MoveNote()
+    {
+        for(int j=0;j<10000;j++)
+        {
+            objNote.GetComponentsInChildren<RectTransform>()[1].localPosition = new Vector2((-1+Mathf.Sin(j/10))*20, 0);
+            yield return null;
         }
     }
 
@@ -219,4 +243,20 @@ public class TutorialSceneManager : PuzzleSceneManager
     {
         
     }
+
+    public new void BlockPush(int x)
+    {
+        StopCoroutine("MoveNote");
+        objNote.SetActive(false);
+        if (blockfloat) { return; }
+        deleteBlock[x / 10, x % 10] = true;
+    }
+
+    public new void turnEndButton()
+    {
+        StopCoroutine("MoveNote");
+        objNote.SetActive(false);
+        turnEndButtonPush = true;
+    }
+
 }
