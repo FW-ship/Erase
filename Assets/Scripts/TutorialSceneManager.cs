@@ -74,21 +74,31 @@ public class TutorialSceneManager : PuzzleSceneManager
         for (int i = 30; i < scenarioText.Length; i++)
         {
             //★未：wait系と分岐処理のテスト。ＥＮＤでシーンジャンプ。
-            
-            if (scenarioText[i].Length >= 10 && scenarioText[i].Substring(0, 10) == "ＷＡＩＴＥＲＡＳＥ：") { yield return StartCoroutine(Wait(0));i++; }
-            else if (scenarioText[i].Length >= 9 && scenarioText[i].Substring(0, 9) == "ＷＡＩＴＴＵＲＮ：") { yield return StartCoroutine(Wait(1));i++; }
-            else if (scenarioText[i].Length >= 9 && scenarioText[i].Substring(0, 9) == "ＷＡＩＴＬＡＳＴ：") { yield return StartCoroutine(Wait(2));i++; }
+
+            if (scenarioText[i].Length >= 10 && scenarioText[i].Substring(0, 10) == "ＷＡＩＴＥＲＡＳＥ：") { yield return StartCoroutine(Wait(0)); i++; }
+            else if (scenarioText[i].Length >= 9 && scenarioText[i].Substring(0, 9) == "ＷＡＩＴＴＵＲＮ：") { yield return StartCoroutine(Wait(1)); i++; }
+            else if (scenarioText[i].Length >= 9 && scenarioText[i].Substring(0, 9) == "ＷＡＩＴＬＡＳＴ：") { yield return StartCoroutine(Wait(2)); i++; }
+            else if (scenarioText[i].Length >= 6 && scenarioText[i].Substring(0, 6) == "ＵＮＴＩＬ：") { yield return StartCoroutine(Wait(3, scenarioText[i].Substring(6))); i++; }
             else if (scenarioText[i].Length >= 6 && scenarioText[i].Substring(0, 6) == "ＩＦＮＯＴ：") { IFNOT(ref i); }
             else if (scenarioText[i].Length >= 5 && scenarioText[i].Substring(0, 5) == "ＢＡＣＫ：") { i -= 1 + int.Parse(scenarioText[i].Substring(5)); }
-            else if (scenarioText[i].Length >= 4 && scenarioText[i].Substring(0, 4) == "ＰＵＴ：") { linenum = i; yield return StartCoroutine(Put());i = linenum; }
+            else if (scenarioText[i].Length >= 4 && scenarioText[i].Substring(0, 4) == "ＰＵＴ：") { linenum = i; yield return StartCoroutine(Put()); i = linenum; }
             else if (scenarioText[i].Length >= 5 && scenarioText[i].Substring(0, 5) == "ＮＯＴＥ：") { Note(i); }
-            else if (scenarioText[i].Length >= 4 && scenarioText[i].Substring(0, 4) == "ＥＮＤ：") { string[] tmp = scenarioText[i].Substring(4).Split(',');if (win) { PlayerPrefs.SetString("ScenarioName", tmp[0]); } else { PlayerPrefs.SetString("ScenarioName", tmp[1]); } }
+            else if (scenarioText[i].Length >= 3 && scenarioText[i].Substring(0, 3) == "ＬＰ：") { LP(i); }
+            else if (scenarioText[i].Length >= 4 && scenarioText[i].Substring(0, 4) == "ＥＮＤ：") { string[] tmp = scenarioText[i].Substring(4).Split(','); if (win) { PlayerPrefs.SetString("ScenarioName", tmp[0]); } else { PlayerPrefs.SetString("ScenarioName", tmp[1]); } }
             else {
-                if (scenarioText[i] == "" || scenarioText[i] == "ＥＮＤ：" || scenarioText[i] == "ＩＦＥＮＤ：") { continue; }
+                if (scenarioText[i] == "" || scenarioText[i] == "ＩＦＥＮＤ：") { continue; }
                 Talk(ref i); yield return StartCoroutine(u1.PushWait());
             }
             Resources.UnloadUnusedAssets();
         }
+    }
+
+    private void LP(int i)
+    {
+        string[] str;
+        str=scenarioText[i].Substring(3).Split(',');
+        if (str[1][0] == '+' || str[1][0] == '-') { lifePoint[int.Parse(str[0])] += int.Parse(str[1]); }
+        else { lifePoint[int.Parse(str[0])] = int.Parse(str[1]); }
     }
 
     private void Note(int i)
@@ -110,8 +120,9 @@ public class TutorialSceneManager : PuzzleSceneManager
         }
     }
 
-    private IEnumerator Wait(int mode)
+    private IEnumerator Wait(int mode,string str="")
     {
+        string[] strs;
         objTextImage.SetActive(false);
         objName.SetActive(false);
 
@@ -143,6 +154,16 @@ public class TutorialSceneManager : PuzzleSceneManager
             while (!winloseFlag)//勝敗決定まで
             {
                 yield return null;
+            }
+        }
+        if (mode == 3)
+        {
+            strs = str.Split(',');
+            while (!winloseFlag)
+            {
+                yield return null;
+                //LP条件を満たすとブレークする。
+                if (lifePoint[int.Parse(strs[0])]<= int.Parse(strs[1]) && !turnProcess) { break; }
             }
         }
         objTextImage.SetActive(true);
