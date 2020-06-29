@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
+using System.Collections;
 
 public class PuzzleCardPush : MonoBehaviour {
     const int HAND_NUM = 3;
@@ -43,7 +44,7 @@ public class PuzzleCardPush : MonoBehaviour {
         {
             if (n10 == 0)
             {
-                GetComponent<Image>().enabled = false;
+                StartCoroutine(CardErase());
             }
             objImage[n10, n1].GetComponent<Image>().enabled = false;
             objText[n10, n1].GetComponent<Text>().enabled = false;
@@ -59,6 +60,22 @@ public class PuzzleCardPush : MonoBehaviour {
         }
         if (count == -1) { count = 0; }
     }
+
+    public IEnumerator CardErase()
+    {
+        Image image = GetComponent<Image>();
+        p1.cardErase = true;
+        for (int i = 0; i < 20; i++)
+        {
+            image.sprite = p1.brokenBlockSprite[i];
+            yield return null;
+        }
+        image.enabled = false;
+        objImage[n10, n1].GetComponent<Image>().enabled = false;
+        objText[n10, n1].GetComponent<Text>().enabled = false;
+        p1.cardErase = false;
+    }
+
 
     public void OtherPush()
     {

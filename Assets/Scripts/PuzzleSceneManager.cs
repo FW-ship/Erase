@@ -122,7 +122,7 @@ public class PuzzleSceneManager : MonoBehaviour
     public List<StatusEffect>[] statusEffect = new List<StatusEffect>[2];
 
     public int[] maxmana = new int[5];
-
+    public bool cardErase = false;
 
     // Use this for initialization
     void Start()
@@ -406,7 +406,7 @@ public class PuzzleSceneManager : MonoBehaviour
         winloseFlag = false;
         turnEndButtonPush = false;
         turnProcess = false;
-
+        cardErase = false;
         objWinLose.gameObject.SetActive(false);
 
         //フェイズスキップフラグの初期化
@@ -1142,6 +1142,7 @@ public class PuzzleSceneManager : MonoBehaviour
         turnProcess = true;
         //第２種（特殊効果）呪文フェイズ→第１種（強化）呪文フェイズ→第３種（ダメージ）呪文フェイズ→シュジンコウ攻撃フェイズ→第０種（召喚呪文）フェイズの順で処理される。
         //使用カードの確定（自身）※送信処理前に確定させないと、同期待ち中に得たマナで使用されるカードが増えうる。
+        while (cardErase == true) { yield return null; }
         CardUse(0);
         //通信対戦時の同期待ち（cardManaデータを一致させる）
         yield return StartCoroutine(WaitMatchData(300));//300フレームまで同期遅れを許容
