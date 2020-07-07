@@ -1,4 +1,4 @@
-【提案06/28】
+【提案06/28】てすと
 ＜プロローグ（１－０）＞　※初回起動時は自動で選択。長くても1分以内
 --build target 'Erase'
 --assembling startup.s...
