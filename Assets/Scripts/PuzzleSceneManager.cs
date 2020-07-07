@@ -115,7 +115,6 @@ public class PuzzleSceneManager : MonoBehaviour
     public List<AudioClip> se = new List<AudioClip>();                                     //効果音のオーディオクリップ
     public List<Sprite> cardImage = new List<Sprite>();                                   //カードの画像（配列は全種類分だが、実際にロードするのは使用する分のみ）
     private List<Sprite> followerImage = new List<Sprite>();                               //シュジンコウの画像（配列は全種類分だが、実際にロードするのは使用する分のみ）
-    private Sprite[] spellback = new Sprite[20];
     private System.Random rnd = new System.Random();                                         //乱数を生成。
     public CardData c1;
     public Utility u1;
@@ -377,11 +376,6 @@ public class PuzzleSceneManager : MonoBehaviour
                     }
                 }
             }
-        }
-        for (int x = 0; x < 20; x++)
-        {
-            if (x < 10) { spellback[x]=Resources.Load<Sprite>("spellback_010" + x.ToString()); }
-            else{ spellback[x]=Resources.Load<Sprite>("spellback_01" + x.ToString()); }
         }
         objFollower[0].GetComponent<Image>().sprite = null;//unity不具合回避
         objFollower[1].GetComponent<Image>().sprite = null;//unity不具合回避
@@ -1108,30 +1102,6 @@ public class PuzzleSceneManager : MonoBehaviour
         }
     }
 
-    private IEnumerator SpellbackDraw(int player)
-    {
-        for (int j = 0; j < 5; j++)
-        {
-            yield return null;
-        }
-        objSpellback.SetActive(true);
-        if(player==0)objSpellback.GetComponent<Image>().color = new Color(0.4f,0.4f,1,1);
-        if (player == 1) objSpellback.GetComponent<Image>().color = new Color(1, 0.4f, 0.4f, 1);
-        for (int i = 0; i < 20; i++)
-            {
-                objSpellback.GetComponent<Image>().sprite = null;
-                objSpellback.GetComponent<Image>().sprite = spellback[i];
-                for (int j = 0; j < 5; j++) { yield return null;
-                }
-            }
-        objSpellback.SetActive(false);
-        for (int j = 0; j < 5; j++)
-        {
-            yield return null;
-        }
-    }
-
-
     //ターン処理関数
     private IEnumerator TurnFunc()
     {
@@ -1140,6 +1110,7 @@ public class PuzzleSceneManager : MonoBehaviour
         objStatusEffect.GetComponent<RectTransform>().localPosition = new Vector2(-1280, 0);
         turnEndButtonPush = false;
         turnProcess = true;
+        objSpellback.SetActive(true);
         //第２種（特殊効果）呪文フェイズ→第１種（強化）呪文フェイズ→第３種（ダメージ）呪文フェイズ→シュジンコウ攻撃フェイズ→第０種（召喚呪文）フェイズの順で処理される。
         //使用カードの確定（自身）※送信処理前に確定させないと、同期待ち中に得たマナで使用されるカードが増えうる。
         while (cardErase == true) { yield return null; }
@@ -1265,6 +1236,7 @@ public class PuzzleSceneManager : MonoBehaviour
             }
         }
 
+        objSpellback.SetActive(false);
         //状態異常処理
         for (l = 0; l < 2; l++)
         {
@@ -1393,7 +1365,6 @@ public class PuzzleSceneManager : MonoBehaviour
         objStatusEffect.GetComponentsInChildren<Text>()[0].text = handCard[player, hand].cardExplain;
         objStatusEffect.GetComponentsInChildren<Text>()[1].text = "";
         objStatusEffect.GetComponentsInChildren<Text>()[2].text = "";
-        StartCoroutine(SpellbackDraw(player));
         for (int i = 0; i < 5; i++)
         {
             if (player == 0) { objStatusEffect.GetComponent<RectTransform>().localPosition = new Vector2(i * 1280 / 5 - 1280, 0); }
